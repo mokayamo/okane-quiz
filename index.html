@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>おかねはかせクイズ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFF9E8;
+    --card:#FFFFFF;
+    --gold:#F7B32B;
+    --gold-deep:#E09B10;
+    --green:#2FBF71;
+    --coral:#FF6B6B;
+    --blue:#4D96FF;
+    --purple:#9B6BFF;
+    --ink:#3E3226;
+    --ink-soft:#8A7B65;
+    --radius:22px;
+    --shadow:0 6px 0 rgba(62,50,38,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDGothic","Yu Gothic",sans-serif;
+    background:var(--bg);
+    background-image:radial-gradient(circle at 20% 15%, rgba(247,179,43,.10) 0 90px, transparent 90px),
+                     radial-gradient(circle at 85% 70%, rgba(77,150,255,.08) 0 120px, transparent 120px),
+                     radial-gradient(circle at 70% 20%, rgba(47,191,113,.08) 0 70px, transparent 70px);
+    color:var(--ink);
+    display:flex;justify-content:center;
+    min-height:100dvh;
+    overflow-x:hidden;
+  }
+  .wrap{width:100%;max-width:560px;padding:20px 16px 48px;}
+
+  /* ===== ミュートボタン ===== */
+  .mute-btn{
+    position:fixed;top:12px;right:12px;z-index:50;
+    width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--card);box-shadow:var(--shadow);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease;
+  }
+  .mute-btn svg{width:22px;height:22px;fill:none;stroke:var(--ink-soft);
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .mute-btn .icon-sound-off{display:none;}
+  .mute-btn.muted .icon-sound-on{display:none;}
+  .mute-btn.muted .icon-sound-off{display:block;}
+  .mute-btn.muted svg{stroke:var(--coral);}
+  .mute-btn:hover{transform:scale(1.08);}
+  .mute-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+
+  /* ===== コインマスコット ===== */
+  .coin{width:110px;height:110px;margin:0 auto;display:block;filter:drop-shadow(0 5px 0 rgba(62,50,38,.15));}
+  .coin.small{width:60px;height:60px;}
+  .coin-bounce{animation:bounce 1.6s ease-in-out infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .coin-happy{animation:spinjump .7s ease;}
+  @keyframes spinjump{0%{transform:scale(1) rotate(0)}40%{transform:scale(1.25) rotate(12deg)}70%{transform:scale(.95) rotate(-8deg)}100%{transform:scale(1) rotate(0)}}
+  .coin-sad{animation:wobble .7s ease;}
+  @keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+  .quiz-mascot{text-align:center;margin-bottom:10px;}
+
+  /* ===== 画面切り替え ===== */
+  .screen{display:none;animation:fadein .35s ease;}
+  .screen.active{display:block;}
+  @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ===== タイトル ===== */
+  .title-badge{
+    text-align:center;font-size:14px;font-weight:700;color:var(--gold-deep);
+    letter-spacing:.35em;margin:14px 0 4px;
+  }
+  h1.title{text-align:center;font-size:34px;font-weight:900;line-height:1.3;margin-bottom:6px;}
+  h1.title .accent{color:var(--gold-deep);}
+  .subtitle{text-align:center;font-size:14px;color:var(--ink-soft);margin-bottom:24px;}
+
+  .theme-label{font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;}
+  .theme-cards{display:flex;flex-direction:column;gap:14px;}
+  .theme-card{
+    display:flex;align-items:center;gap:14px;
+    background:var(--card);border:3px solid transparent;border-radius:var(--radius);
+    padding:16px 18px;cursor:pointer;box-shadow:var(--shadow);
+    transition:transform .12s ease,border-color .12s ease;
+    font-family:inherit;text-align:left;width:100%;
+  }
+  .theme-card:hover,.theme-card:focus-visible{transform:translateY(-3px);}
+  .theme-card:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+  .theme-card:active{transform:translateY(1px);}
+  .theme-emoji{
+    width:58px;height:58px;border-radius:18px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .theme-emoji svg{width:32px;height:32px;}
+  .theme-card:nth-child(1) .theme-emoji{background:#FFF1D6;}
+  .theme-card:nth-child(1) .theme-emoji svg{stroke:var(--gold-deep);}
+  .theme-card:nth-child(2) .theme-emoji{background:#E2F7EC;}
+  .theme-card:nth-child(2) .theme-emoji svg{stroke:#1B8A4E;}
+  .theme-card:nth-child(3) .theme-emoji{background:#E5EEFF;}
+  .theme-card:nth-child(3) .theme-emoji svg{stroke:var(--blue);}
+  .theme-card:nth-child(4) .theme-emoji{background:#F0E8FF;}
+  .theme-card:nth-child(4) .theme-emoji svg{stroke:var(--purple);}
+  .theme-emoji svg{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .theme-card.mix{border:3px solid var(--purple);}
+  .theme-name{display:block;font-size:17px;font-weight:900;line-height:1.35;}
+  .theme-desc{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .theme-count{margin-left:auto;font-size:12px;font-weight:700;color:var(--ink-soft);flex-shrink:0;}
+
+  /* ===== クイズ画面 ===== */
+  .quiz-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .quiz-theme{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:12px;}
+  .back-btn{
+    font-family:inherit;background:var(--card);border:none;border-radius:999px;
+    padding:8px 16px 8px 12px;font-size:13.5px;font-weight:900;color:var(--ink-soft);
+    cursor:pointer;box-shadow:var(--shadow);transition:transform .1s ease;
+    display:inline-flex;align-items:center;gap:3px;
+  }
+  .back-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;
+    stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+  .star-icon{width:15px;height:15px;fill:var(--gold);stroke:var(--gold-deep);
+    stroke-width:1;vertical-align:-2px;margin-right:2px;}
+  .back-btn:hover{transform:translateY(-2px);color:var(--ink);}
+  .back-btn:active{transform:translateY(1px);}
+  .back-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+
+  /* ===== かくにんモーダル ===== */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;z-index:80;
+    background:rgba(62,50,38,.5);
+    align-items:center;justify-content:center;padding:24px;
+    animation:fadein .2s ease;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:0 10px 0 rgba(62,50,38,.15);
+    padding:28px 24px;text-align:center;max-width:340px;width:100%;
+    animation:pop .25s ease;
+  }
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-emoji{margin-bottom:8px;}
+  .modal-emoji svg{width:56px;height:56px;}
+  .modal-title{font-size:20px;font-weight:900;line-height:1.5;margin-bottom:8px;}
+  .modal-note{font-size:13.5px;font-weight:700;color:var(--ink-soft);margin-bottom:20px;}
+  .modal-btns{display:flex;flex-direction:column;gap:10px;}
+  .modal-btn{
+    font-family:inherit;border:none;border-radius:999px;padding:14px;
+    font-size:16px;font-weight:900;cursor:pointer;transition:transform .1s ease,box-shadow .1s ease;
+  }
+  .modal-btn.stay{background:var(--gold);color:#fff;box-shadow:0 5px 0 var(--gold-deep);}
+  .modal-btn.quit{background:#fff;color:var(--ink-soft);box-shadow:0 5px 0 rgba(62,50,38,.15);}
+  .modal-btn:hover{transform:translateY(-2px);}
+  .modal-btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep);}
+  .modal-btn.quit:active{box-shadow:0 2px 0 rgba(62,50,38,.15);}
+  .modal-btn:focus-visible{outline:3px solid var(--blue);outline-offset:3px;}
+  .score-chip{
+    background:var(--card);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:900;
+    box-shadow:var(--shadow);display:inline-flex;align-items:center;
+  }
+  .progress-track{background:#F0E6CC;border-radius:999px;height:14px;overflow:hidden;margin-bottom:14px;}
+  .progress-fill{
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,var(--gold),var(--gold-deep));
+    transition:width .4s ease;
+  }
+  .q-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 20px;margin-bottom:16px;
+  }
+  .q-meta{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .q-num{font-size:13px;font-weight:900;color:var(--ink-soft);}
+  .q-type{font-size:11.5px;font-weight:900;padding:4px 10px;border-radius:999px;color:#fff;}
+  .q-type.ox{background:var(--coral);}
+  .q-type.choice{background:var(--blue);}
+  .q-text{font-size:19px;font-weight:900;line-height:2.1;}
+
+  /* ===== ルビ(ふりがな) ===== */
+  ruby{ruby-align:center;}
+  rt{font-size:.5em;font-weight:700;color:var(--ink-soft);
+     letter-spacing:0;user-select:none;}
+  .ans-btn ruby rt{color:inherit;opacity:.75;}
+  .fb-text{line-height:2;}
+  .rv-q,.rv-a,.rv-exp{line-height:2;}
+
+  .answers{display:flex;flex-direction:column;gap:12px;}
+  .answers.ox-mode{flex-direction:row;}
+  .ans-btn{
+    font-family:inherit;width:100%;
+    background:var(--card);border:3px solid #EFE7D2;border-radius:18px;
+    padding:15px 16px;font-size:16.5px;font-weight:900;color:var(--ink);
+    cursor:pointer;box-shadow:var(--shadow);text-align:left;
+    transition:transform .1s ease,border-color .1s ease,background .15s ease;
+    line-height:1.5;
+  }
+  .answers.ox-mode .ans-btn{text-align:center;font-size:46px;padding:20px 10px;line-height:1;}
+  .answers.ox-mode .ans-btn .ox-label{display:block;font-size:13px;margin-top:8px;}
+  .ans-btn:hover:not(:disabled),.ans-btn:focus-visible{transform:translateY(-2px);border-color:var(--gold);}
+  .ans-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+  .ans-btn:disabled{cursor:default;}
+  .ans-btn.correct{background:#E2F7EC;border-color:var(--green);}
+  .ans-btn.wrong{background:#FFE9E9;border-color:var(--coral);}
+  .ans-btn.dim{opacity:.45;}
+  .ox-maru{color:var(--coral);}
+  .ox-batsu{color:var(--blue);}
+
+  /* ===== フィードバック ===== */
+  .feedback{display:none;margin-top:16px;animation:fadein .3s ease;}
+  .feedback.show{display:block;}
+  .fb-card{border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+  .fb-card.good{background:#E2F7EC;border:3px solid var(--green);}
+  .fb-card.bad{background:#FFF3E0;border:3px solid var(--gold);}
+  .fb-head{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:900;margin-bottom:8px;}
+  .fb-card.good .fb-head{color:#1B8A4E;}
+  .fb-card.bad .fb-head{color:var(--gold-deep);}
+  .fb-text{font-size:15px;line-height:1.8;font-weight:700;}
+  .next-btn,.big-btn{
+    font-family:inherit;display:block;width:100%;margin-top:16px;
+    background:var(--gold);border:none;border-radius:999px;
+    padding:16px;font-size:17px;font-weight:900;color:#fff;cursor:pointer;
+    box-shadow:0 5px 0 var(--gold-deep);
+    transition:transform .1s ease,box-shadow .1s ease;
+  }
+  .next-btn:hover,.big-btn:hover{transform:translateY(-2px);}
+  .next-btn:active,.big-btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--gold-deep);}
+  .next-btn:focus-visible,.big-btn:focus-visible{outline:3px solid var(--blue);outline-offset:3px;}
+  .big-btn.ghost{background:#fff;color:var(--ink);box-shadow:0 5px 0 rgba(62,50,38,.15);}
+
+  /* ===== 結果画面 ===== */
+  .result-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:30px 22px;text-align:center;margin-top:10px;
+  }
+  .result-label{font-size:14px;font-weight:700;color:var(--ink-soft);letter-spacing:.2em;}
+  .result-score{font-size:46px;font-weight:900;margin:6px 0 2px;}
+  .result-score span{font-size:20px;color:var(--ink-soft);}
+  .best-line{font-size:13px;font-weight:700;color:var(--gold-deep);margin-top:2px;}
+  .level-badge{
+    display:inline-block;margin:14px 0 6px;padding:12px 26px;border-radius:999px;
+    font-size:22px;font-weight:900;color:#fff;background:var(--gold);
+    box-shadow:0 5px 0 var(--gold-deep);
+  }
+  .level-msg{font-size:14.5px;line-height:1.8;font-weight:700;color:var(--ink-soft);margin-top:10px;}
+
+  /* ===== おさらい ===== */
+  .review{margin-top:22px;text-align:left;}
+  .review-title{font-size:15px;font-weight:900;margin-bottom:10px;text-align:center;}
+  .rv-item{
+    background:#FFF6E3;border:2px solid #F0E2BE;border-radius:16px;
+    padding:14px 16px;margin-bottom:10px;
+  }
+  .rv-q{font-size:14px;font-weight:900;line-height:1.7;}
+  .rv-a{font-size:13.5px;font-weight:900;color:#1B8A4E;margin-top:8px;}
+  .rv-exp{font-size:13px;font-weight:700;color:var(--ink-soft);line-height:1.7;margin-top:4px;}
+  .review-perfect{
+    background:#E2F7EC;border:2px solid var(--green);border-radius:16px;
+    padding:14px;font-size:14px;font-weight:900;color:#1B8A4E;text-align:center;
+  }
+
+  /* ===== かみふぶき ===== */
+  .confetti{position:fixed;top:-14px;border-radius:3px;pointer-events:none;z-index:99;
+    animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9;}}
+
+  /* ===== コレクションちょうボタン(タイトル画面) ===== */
+  .collection-btn{
+    font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;margin-top:18px;background:#fff;border:3px solid var(--gold);
+    border-radius:999px;padding:14px;font-size:15.5px;font-weight:900;color:var(--gold-deep);
+    cursor:pointer;box-shadow:var(--shadow);transition:transform .1s ease;
+  }
+  .collection-btn svg{width:20px;height:20px;fill:none;stroke:var(--gold-deep);
+    stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .collection-btn:hover{transform:translateY(-2px);}
+  .collection-btn:active{transform:translateY(1px);}
+  .collection-btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+
+  /* ===== コースタブ ===== */
+  .course-tabs{display:flex;gap:10px;margin-bottom:16px;}
+  .course-tab{flex:1;font-family:inherit;border:3px solid #EFE7D2;background:#fff;
+    border-radius:999px;padding:11px;font-size:14.5px;font-weight:900;color:var(--ink-soft);
+    cursor:pointer;box-shadow:var(--shadow);transition:transform .1s ease;}
+  .course-tab.active{background:var(--gold);border-color:var(--gold-deep);color:#fff;
+    box-shadow:0 5px 0 var(--gold-deep);}
+  .course-tab:hover{transform:translateY(-2px);}
+  .course-tab:focus-visible{outline:3px solid var(--blue);outline-offset:2px;}
+  .course-head{font-size:14.5px;font-weight:900;margin:8px 0 2px;}
+
+  /* ===== マイページ ===== */
+  .mypage-head{display:flex;align-items:center;gap:10px;margin:6px 0 4px;}
+  .mypage-title{font-size:18px;font-weight:900;}
+  .mypage-progress{font-size:13.5px;font-weight:700;color:var(--ink-soft);margin-bottom:18px;}
+  .collection{display:flex;flex-direction:column;gap:16px;}
+
+  .theme-block{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:18px 18px 20px;
+  }
+  .theme-block.mix-block{border:2px solid #E7DBFF;}
+  .theme-block-top{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .theme-block-name{font-size:15.5px;font-weight:900;}
+  .theme-block-best{margin-left:auto;font-size:12.5px;font-weight:900;color:var(--ink-soft);
+    background:#F5EEDA;border-radius:999px;padding:4px 12px;}
+  .medal-row{display:flex;justify-content:space-around;gap:8px;margin-top:12px;}
+  .medal{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;}
+  .medal svg{width:62px;height:62px;}
+  .medal-name{font-size:12px;font-weight:900;}
+  .medal.got .medal-name{color:var(--ink);}
+  .medal.locked .medal-name{color:#C9BEA8;}
+  .medal.locked svg{filter:grayscale(1);opacity:.42;}
+  .medal.got svg{animation:medalpop .5s ease;}
+  @keyframes medalpop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  .medal-need{font-size:11px;font-weight:700;color:#C9BEA8;line-height:1.7;text-align:center;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important;}
+  }
+  @media (max-width:400px){
+    h1.title{font-size:28px;}
+    .q-text{font-size:17.5px;}
+    .medal svg{width:54px;height:54px;}
+  }
+</style>
+</head>
+<body>
+<button class="mute-btn" id="mute-btn" aria-label="音のオン・オフ">
+    <svg class="icon-sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 8.5a4 4 0 0 1 0 7"/><path d="M18.5 6a7 7 0 0 1 0 12"/></svg>
+    <svg class="icon-sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M17 9.5l4 5M21 9.5l-4 5"/></svg>
+  </button>
+<div class="wrap">
+
+  <!-- ============ タイトル画面 ============ -->
+  <section class="screen active" id="screen-title">
+    <svg class="coin coin-bounce" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="56" fill="#F7B32B" stroke="#E09B10" stroke-width="6"/>
+      <circle cx="60" cy="60" r="42" fill="none" stroke="#FFD97A" stroke-width="4" stroke-dasharray="6 7"/>
+      <circle cx="45" cy="54" r="5" fill="#3E3226"/>
+      <circle cx="75" cy="54" r="5" fill="#3E3226"/>
+      <path d="M44 72 Q60 84 76 72" fill="none" stroke="#3E3226" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="36" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+      <circle cx="84" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+    </svg>
+    <p class="title-badge">マネーリテラシー</p>
+    <h1 class="title">おかね<span class="accent">はかせ</span>クイズ</h1>
+    <p class="subtitle">クイズに<ruby>答<rt>こた</rt></ruby>えて、お<ruby>金<rt>かね</rt></ruby>のことを <ruby>楽<rt>たの</rt></ruby>しく <ruby>学<rt>まな</rt></ruby>ぼう!</p>
+
+    <div class="course-tabs" id="course-tabs">
+      <button class="course-tab active" data-course="0">1〜3<ruby>年生<rt>ねんせい</rt></ruby></button>
+      <button class="course-tab" data-course="1">4〜6<ruby>年生<rt>ねんせい</rt></ruby></button>
+    </div>
+    <p class="theme-label">テーマを <ruby>選<rt>えら</rt></ruby>んでね</p>
+    <div class="theme-cards" id="theme-cards"></div>
+
+    <button class="collection-btn" id="open-mypage">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6.5 12.5 8 22l4-2 4 2 1.5-9.5"/></svg>
+      <span><ruby>集<rt>あつ</rt></ruby>めた メダルを <ruby>見<rt>み</rt></ruby>る</span>
+    </button>
+  </section>
+
+  <!-- ============ クイズ画面 ============ -->
+  <section class="screen" id="screen-quiz">
+    <div class="quiz-top">
+      <button class="back-btn" id="back-btn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>TOP
+      </button>
+      <span class="score-chip">
+        <svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9L12 3.5Z"/></svg>
+        <span id="score">0</span><ruby>点<rt>てん</rt></ruby></span>
+    </div>
+    <p class="quiz-theme" id="quiz-theme-name"></p>
+    <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+
+    <div class="quiz-mascot">
+      <svg class="coin small" id="qz-coin" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="56" fill="#F7B32B" stroke="#E09B10" stroke-width="6"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#FFD97A" stroke-width="4" stroke-dasharray="6 7"/>
+        <circle cx="45" cy="54" r="5" fill="#3E3226"/>
+        <circle cx="75" cy="54" r="5" fill="#3E3226"/>
+        <path id="qz-mouth" d="M46 74 Q60 80 74 74" fill="none" stroke="#3E3226" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="36" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+        <circle cx="84" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+      </svg>
+    </div>
+
+    <div class="q-card">
+      <div class="q-meta">
+        <span class="q-num" id="q-num"></span>
+        <span class="q-type" id="q-type"></span>
+      </div>
+      <p class="q-text" id="q-text"></p>
+    </div>
+
+    <div class="answers" id="answers"></div>
+
+    <div class="feedback" id="feedback">
+      <div class="fb-card" id="fb-card">
+        <div class="fb-head" id="fb-head"></div>
+        <p class="fb-text" id="fb-text"></p>
+      </div>
+      <button class="next-btn" id="next-btn"><ruby>次<rt>つぎ</rt></ruby>の<ruby>問題<rt>もんだい</rt></ruby>へ ▶</button>
+    </div>
+  </section>
+
+  <!-- ============ 結果画面 ============ -->
+  <section class="screen" id="screen-result">
+    <div class="result-card">
+      <svg class="coin coin-bounce" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="56" fill="#F7B32B" stroke="#E09B10" stroke-width="6"/>
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#FFD97A" stroke-width="4" stroke-dasharray="6 7"/>
+        <circle cx="45" cy="54" r="5" fill="#3E3226"/>
+        <circle cx="75" cy="54" r="5" fill="#3E3226"/>
+        <path d="M44 72 Q60 84 76 72" fill="none" stroke="#3E3226" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="36" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+        <circle cx="84" cy="66" r="6" fill="#FF9D7A" opacity=".7"/>
+      </svg>
+      <p class="result-label"><ruby>結果<rt>けっか</rt></ruby> <ruby>発表<rt>はっぴょう</rt></ruby></p>
+      <p class="result-score"><span id="result-score">0</span><span id="result-total"> / 8<ruby>点<rt>てん</rt></ruby></span></p>
+      <p class="best-line" id="best-line"></p>
+      <div class="level-badge" id="level-badge"></div>
+      <p class="level-msg" id="level-msg"></p>
+
+      <div class="review" id="review"></div>
+
+      <button class="big-btn" id="retry-btn">もう<ruby>一度<rt>いちど</rt></ruby> チャレンジ!</button>
+      <button class="big-btn ghost" id="result-mypage">コレクション<ruby>帳<rt>ちょう</rt></ruby>を <ruby>見<rt>み</rt></ruby>る</button>
+      <button class="big-btn ghost" id="home-btn">テーマ<ruby>選<rt>えら</rt></ruby>びに <ruby>戻<rt>もど</rt></ruby>る</button>
+    </div>
+  </section>
+
+  <!-- ============ マイページ(コレクションちょう) ============ -->
+  <section class="screen" id="screen-mypage">
+    <div class="mypage-head">
+      <button class="back-btn" id="mypage-back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>TOP
+      </button>
+      <span class="mypage-title">コレクション<ruby>帳<rt>ちょう</rt></ruby></span>
+    </div>
+    <p class="mypage-progress" id="mypage-progress"></p>
+    <div class="collection" id="collection"></div>
+  </section>
+
+  <!-- ============ かくにんモーダル ============ -->
+  <div class="modal-overlay" id="quit-modal">
+    <div class="modal-card">
+      <div class="modal-emoji">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#FFF1D6" stroke="#E09B10" stroke-width="2.5"/><path d="M18 19a6 6 0 0 1 11 3c0 4-5 4-5 7" fill="none" stroke="#E09B10" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="34" r="1.8" fill="#E09B10"/></svg>
+      </div>
+      <p class="modal-title">クイズを やめて<br>TOPに <ruby>戻<rt>もど</rt></ruby>る?</p>
+      <p class="modal-note"><ruby>今<rt>いま</rt></ruby>の <ruby>点数<rt>てんすう</rt></ruby>は <ruby>消<rt>き</rt></ruby>えちゃうよ</p>
+      <div class="modal-btns">
+        <button class="modal-btn stay" id="modal-stay"><ruby>続<rt>つづ</rt></ruby>ける</button>
+        <button class="modal-btn quit" id="modal-quit">TOPに <ruby>戻<rt>もど</rt></ruby>る</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================= もんだいデータ =================
+// type: "ox" = ○×クイズ / "choice" = 4たくクイズ
+const THEMES_LOW = [
+  {
+    name: "おこづかい・お<ruby>金<rt>かね</rt></ruby>のつかいかた",
+    questions: [
+      {type:"ox", q:"おこづかいちょうを つけると、なにに いくら つかったかが わかる。", answer:0,
+       exp:"おこづかいちょうは、お<ruby>金<rt>かね</rt></ruby>の「きろく」だよ。つけておくと、つかいすぎに <ruby>気<rt>き</rt></ruby>づけるんだ。"},
+      {type:"choice", q:"おこづかいを もらったら、さいしょに するとよいことは?",
+       choices:["すぐ ぜんぶ つかう","つかいみちを かんがえる","おともだちに あげる","そのへんに おいておく"], answer:1,
+       exp:"「なにに つかうかな?」と さきに かんがえると、お<ruby>金<rt>かね</rt></ruby>を じょうずに つかえるよ。"},
+      {type:"ox", q:"ほしいものは、ぜんぶ すぐに <ruby>買<rt>か</rt></ruby>うのが よい。", answer:1,
+       exp:"ほしいものと ひつようなものは ちがうよ。「ほんとうに いるかな?」と いちど かんがえてみよう。"},
+      {type:"choice", q:"「ひつようなもの」は どれかな?",
+       choices:["あたらしい ゲーム","まんが","<ruby>学校<rt>がっこう</rt></ruby>でつかう けしゴム","おかし"], answer:2,
+       exp:"けしゴムは <ruby>学校<rt>がっこう</rt></ruby>で つかう「ひつようなもの」。ゲームや おかしは「ほしいもの」だね。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>は、はたらくことで もらうことができる。", answer:0,
+       exp:"おうちの<ruby>人<rt>ひと</rt></ruby>は、はたらいて お<ruby>金<rt>かね</rt></ruby>を もらっているよ。お<ruby>金<rt>かね</rt></ruby>は たいせつに つかおうね。"},
+      {type:"choice", q:"おともだちに「お<ruby>金<rt>かね</rt></ruby>を かして」と いわれたら どうする?",
+       choices:["だまって かしてあげる","おうちの<ruby>人<rt>ひと</rt></ruby>に そうだんする","こわいから にげる","お<ruby>金<rt>かね</rt></ruby>を あげてしまう"], answer:1,
+       exp:"お<ruby>金<rt>かね</rt></ruby>の かしかりは トラブルの もと。まずは おうちの<ruby>人<rt>ひと</rt></ruby>に そうだんするのが いちばんだよ。"},
+      {type:"ox", q:"みちで お<ruby>金<rt>かね</rt></ruby>を ひろったら、じぶんの ものに してよい。", answer:1,
+       exp:"ひろったお<ruby>金<rt>かね</rt></ruby>は、おとした<ruby>人<rt>ひと</rt></ruby>の たいせつなお<ruby>金<rt>かね</rt></ruby>。こうばん(けいさつ)に とどけようね。"},
+      {type:"choice", q:"500<ruby>円玉<rt>えんだま</rt></ruby>1まいは、100<ruby>円玉<rt>えんだま</rt></ruby> なんまいぶん?",
+       choices:["3まい","4まい","5まい","10まい"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby>が 5まいで 500<ruby>円<rt>えん</rt></ruby>! 100、200、300、400、500と かぞえてみよう。"},
+      {type:"ox", q:"おこづかいは、つかいすぎても また すぐ もらえる。", answer:1,
+       exp:"おこづかいは きまった ぶんだけ。つかいすぎると つぎまで またなきゃ いけないよ。"},
+      {type:"choice", q:"お<ruby>金<rt>かね</rt></ruby>を たいせつに つかう<ruby>人<rt>ひと</rt></ruby>は どれかな?",
+       choices:["かんがえずに ぜんぶ つかう","ほしいものを よく かんがえて <ruby>買<rt>か</rt></ruby>う","おとしても きにしない","なくしても へいき"], answer:1,
+       exp:"「ほんとうに ほしいかな?」と かんがえて <ruby>買<rt>か</rt></ruby>う<ruby>人<rt>ひと</rt></ruby>は、お<ruby>金<rt>かね</rt></ruby>を たいせつに できているよ。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>は、なくさないように さいふや ちょきんばこに しまうとよい。", answer:0,
+       exp:"そのとおり! お<ruby>金<rt>かね</rt></ruby>は きめた ばしょに しまうと、なくしにくいよ。"},
+      {type:"choice", q:"100<ruby>円<rt>えん</rt></ruby> もっています。80<ruby>円<rt>えん</rt></ruby>の おかしを <ruby>買<rt>か</rt></ruby>うと、のこりは いくら?",
+       choices:["10<ruby>円<rt>えん</rt></ruby>","20<ruby>円<rt>えん</rt></ruby>","30<ruby>円<rt>えん</rt></ruby>","80<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"100<ruby>円<rt>えん</rt></ruby> − 80<ruby>円<rt>えん</rt></ruby> = 20<ruby>円<rt>えん</rt></ruby>。のこったお<ruby>金<rt>かね</rt></ruby>は ちょきんも できるね。"},
+      {type:"ox", q:"かぞくが かってくれる ものは、ぜんぶ タダ(むりょう)だ。", answer:1,
+       exp:"タダに <ruby>見<rt>み</rt></ruby>えても、かぞくが お<ruby>金<rt>かね</rt></ruby>を はらってくれているんだ。「ありがとう」を わすれずにね。"},
+      {type:"choice", q:"おこづかいで やってはいけない ことは どれ?",
+       choices:["ほしい<ruby>本<rt>ほん</rt></ruby>を <ruby>買<rt>か</rt></ruby>う","おやつを <ruby>買<rt>か</rt></ruby>う","おともだちの お<ruby>金<rt>かね</rt></ruby>を とる","ちょきんする"], answer:2,
+       exp:"<ruby>人<rt>ひと</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>を とるのは ぜったいダメ。じぶんの お<ruby>金<rt>かね</rt></ruby>で かんがえて つかおうね。"},
+      {type:"ox", q:"1<ruby>円玉<rt>えんだま</rt></ruby>も 10<ruby>円玉<rt>えんだま</rt></ruby>も、みんな たいせつな お<ruby>金<rt>かね</rt></ruby>だ。", answer:0,
+       exp:"そのとおり! どんな お<ruby>金<rt>かね</rt></ruby>も たいせつ。1<ruby>円<rt>えん</rt></ruby>が あつまれば <ruby>大<rt>おお</rt></ruby>きな お<ruby>金<rt>かね</rt></ruby>に なるよ。"},
+      {type:"choice", q:"おこづかいちょうに かくと よい ことは どれ?",
+       choices:["すきな <ruby>絵<rt>え</rt></ruby> だけ","つかった <ruby>日<rt>ひ</rt></ruby>と ねだん","なにも かかない","おともだちの なまえ"], answer:1,
+       exp:"いつ・なにに・いくら つかったかを かくと、お<ruby>金<rt>かね</rt></ruby>の つかいかたが よく わかるよ。"},
+      {type:"ox", q:"おこづかいは、おてつだいや やくそくの ごほうびとして もらえる ことも ある。", answer:0,
+       exp:"おうちに よって もらいかたは いろいろ。どんな もらいかたでも、たいせつに つかおうね。"},
+      {type:"choice", q:"おとしだまなど <ruby>大<rt>おお</rt></ruby>きな お<ruby>金<rt>かね</rt></ruby>を もらったら、どうするのが よい?",
+       choices:["すぐ ぜんぶ つかう","おうちの<ruby>人<rt>ひと</rt></ruby>と そうだんして きめる","おともだちに くばる","その へんに おいておく"], answer:1,
+       exp:"<ruby>大<rt>おお</rt></ruby>きな お<ruby>金<rt>かね</rt></ruby>こそ、つかいみちを いっしょに かんがえて もらうと あんしんだよ。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>は、ポケットに ばらばらに いれて もちあるくのが よい。", answer:1,
+       exp:"ポケットだと おとしやすいよ。さいふに いれて たいせつに もちあるこうね。"},
+      {type:"choice", q:"1000<ruby>円<rt>えん</rt></ruby>さつ 1まいは、100<ruby>円玉<rt>えんだま</rt></ruby> なんまいぶん?",
+       choices:["5まい","8まい","10まい","100まい"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby>が 10まいで 1000<ruby>円<rt>えん</rt></ruby>! かぞえて たしかめてみよう。"},
+      {type:"ox", q:"じどうはんばいきや ゲームで つかった お<ruby>金<rt>かね</rt></ruby>も、おこづかいから へっていく。", answer:0,
+       exp:"ちいさな つかいものも、あわせると <ruby>大<rt>おお</rt></ruby>きく なるよ。きろくして おくと あんしんだね。"},
+      {type:"choice", q:"おこづかいが たりなく なったら、どうする?",
+       choices:["おうちの<ruby>人<rt>ひと</rt></ruby>の さいふから もってくる","つぎの おこづかいまで がまんして くふうする","おともだちに かりる","だまって もらう"], answer:1,
+       exp:"たりない ときこそ くふうの チャンス。<ruby>人<rt>ひと</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>を もってくるのは ぜったい だめだよ。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>を なげたり やぶったりして あそんでも よい。", answer:1,
+       exp:"お<ruby>金<rt>かね</rt></ruby>は みんなで つかう たいせつな もの。おもちゃに しては いけないよ。"},
+      {type:"choice", q:"50<ruby>円玉<rt>えんだま</rt></ruby> 2まいで、いくらに なる?",
+       choices:["50<ruby>円<rt>えん</rt></ruby>","100<ruby>円<rt>えん</rt></ruby>","150<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"50 + 50 = 100<ruby>円<rt>えん</rt></ruby>! 50<ruby>円玉<rt>えんだま</rt></ruby> 2まいと 100<ruby>円玉<rt>えんだま</rt></ruby> 1まいは おなじ ねうちだよ。"},
+      {type:"ox", q:"おともだちに おかしを おごって もらいつづけるのは、よい ことだ。", answer:1,
+       exp:"おごって もらってばかりだと、おともだちも こまってしまうよ。おうちの<ruby>人<rt>ひと</rt></ruby>に そうだんしよう。"},
+      {type:"choice", q:"おこづかいを おとして しまったら、どうする?",
+       choices:["だまって かくす","おうちの<ruby>人<rt>ひと</rt></ruby>に はなす","なかったことに する","おともだちの せいに する"], answer:1,
+       exp:"しっぱいは だれにでも あるよ。はなせば、つぎに <ruby>気<rt>き</rt></ruby>をつける ほうほうも かんがえられるね。"},
+      {type:"ox", q:"10<ruby>円玉<rt>えんだま</rt></ruby> 10まいと、100<ruby>円玉<rt>えんだま</rt></ruby> 1まいは、おなじ ねうちだ。", answer:0,
+       exp:"10<ruby>円<rt>えん</rt></ruby>が 10まいで 100<ruby>円<rt>えん</rt></ruby>。かたちが ちがっても、ねうちは おなじなんだ。"},
+      {type:"choice", q:"おこづかいで <ruby>買<rt>か</rt></ruby>った ものは、どうすると よい?",
+       choices:["じぶんの ものとして たいせつに つかう","すぐ こわす","そのへんに すてる","おともだちに おしつける"], answer:0,
+       exp:"じぶんで えらんで <ruby>買<rt>か</rt></ruby>った ものは、さいごまで たいせつに つかおうね。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>を たくさん もっていることを、みんなに <ruby>見<rt>み</rt></ruby>せびらかすと あぶない ことも ある。", answer:0,
+       exp:"<ruby>見<rt>み</rt></ruby>せびらかすと、とられたり トラブルに なったり することも。お<ruby>金<rt>かね</rt></ruby>は そっと しまって おこうね。"},
+      {type:"choice", q:"500<ruby>円<rt>えん</rt></ruby> もらって、300<ruby>円<rt>えん</rt></ruby> つかいました。のこりは いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","800<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"500 − 300 = 200<ruby>円<rt>えん</rt></ruby>。つかった あとの のこりも かぞえられると りっぱだね。"},
+      {type:"ox", q:"お<ruby>金<rt>かね</rt></ruby>の ことで こまったら、おうちの<ruby>人<rt>ひと</rt></ruby>に そうだんして よい。", answer:0,
+       exp:"もちろん! ひとりで なやまず、そうだんするのが いちばんだよ。"},
+      {type:"choice", q:"おつかいで おつりを もらったら、どうする?",
+       choices:["じぶんの ポケットに いれる","おうちの<ruby>人<rt>ひと</rt></ruby>に わたす","おとしても きにしない","かくして おく"], answer:1,
+       exp:"おつかいの お<ruby>金<rt>かね</rt></ruby>と おつりは、たのんだ<ruby>人<rt>ひと</rt></ruby>の もの。きちんと わたそうね。"},
+    ]
+  },
+  {
+    name: "ちょきん・ためるくふう",
+    questions: [
+      {type:"ox", q:"「ちょきん」とは、お<ruby>金<rt>かね</rt></ruby>を ためること。", answer:0,
+       exp:"そのとおり! つかわずに とっておくことを「ちょきん」というよ。"},
+      {type:"choice", q:"1000<ruby>円<rt>えん</rt></ruby>の おもちゃが ほしいよ。まいつき 100<ruby>円<rt>えん</rt></ruby>ずつ ためると、なんかげつで <ruby>買<rt>か</rt></ruby>える?",
+       choices:["5かげつ","8かげつ","10かげつ","20かげつ"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby> × 10かげつ = 1000<ruby>円<rt>えん</rt></ruby>! こつこつ ためれば、<ruby>大<rt>おお</rt></ruby>きな かいものも できるんだ。"},
+      {type:"ox", q:"ちょきんばこに いれた お<ruby>金<rt>かね</rt></ruby>は、だんだん へっていく。", answer:1,
+       exp:"ちょきんばこの お<ruby>金<rt>かね</rt></ruby>は、へらないよ。いれた ぶんだけ どんどん たまっていくんだ。"},
+      {type:"choice", q:"お<ruby>金<rt>かね</rt></ruby>を ためる コツは どれかな?",
+       choices:["もくひょうを きめる","ぜんぶ すぐ つかう","かんがえずに <ruby>買<rt>か</rt></ruby>う","ためるのを わすれる"], answer:0,
+       exp:"「なんのために いくら ためる!」と もくひょうを きめると、ちょきんが つづきやすいよ。"},
+      {type:"ox", q:"ぎんこうに お<ruby>金<rt>かね</rt></ruby>を あずけることが できる。", answer:0,
+       exp:"ぎんこうは、みんなの お<ruby>金<rt>かね</rt></ruby>を あずかってくれる ところ。あんぜんに まもってくれるよ。"},
+      {type:"choice", q:"おこづかいが 300<ruby>円<rt>えん</rt></ruby>。100<ruby>円<rt>えん</rt></ruby>を ちょきんすると、つかえるお<ruby>金<rt>かね</rt></ruby>は いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","400<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"300<ruby>円<rt>えん</rt></ruby> − 100<ruby>円<rt>えん</rt></ruby> = 200<ruby>円<rt>えん</rt></ruby>。さきに ためるぶんを わけるのが ちょきんの コツだよ。"},
+      {type:"ox", q:"ためたお<ruby>金<rt>かね</rt></ruby>で、ほんとうに ほしいものを <ruby>買<rt>か</rt></ruby>うことができる。", answer:0,
+       exp:"ちょきんの ごほうびだね! ためたお<ruby>金<rt>かね</rt></ruby>で <ruby>買<rt>か</rt></ruby>ったものは、もっと たいせつに できるよ。"},
+      {type:"choice", q:"ちょきんが うまくいく ほうほうは どれ?",
+       choices:["のこったら ためる","もらったら さきに ためるぶんを わける","ためるのは <ruby>大人<rt>おとな</rt></ruby>になってから","おともだちに あずける"], answer:1,
+       exp:"「さきどり ちょきん」というよ。もらったとき さきに わけておくと、しぜんに たまるんだ。"},
+      {type:"ox", q:"すこしずつでも つづけて ためると、お<ruby>金<rt>かね</rt></ruby>は たまっていく。", answer:0,
+       exp:"そのとおり! まいにち すこしでも、つづければ <ruby>大<rt>おお</rt></ruby>きな お<ruby>金<rt>かね</rt></ruby>に なるんだ。"},
+      {type:"choice", q:"500<ruby>円<rt>えん</rt></ruby> ためるには、100<ruby>円<rt>えん</rt></ruby>を なんかい ためればいい?",
+       choices:["3かい","5かい","8かい","10かい"], answer:1,
+       exp:"100<ruby>円<rt>えん</rt></ruby> × 5かい = 500<ruby>円<rt>えん</rt></ruby>! こつこつ つづけるのが コツだよ。"},
+      {type:"ox", q:"ためている とちゅうで ぜんぶ つかうと、もくひょうまで とどかない。", answer:0,
+       exp:"そのとおり。もくひょうまで あとすこしなら、がまんして つづけてみよう。"},
+      {type:"choice", q:"ちょきんばこは どんなときに あけると いいかな?",
+       choices:["まいにち あける","もくひょうの お<ruby>金<rt>かね</rt></ruby>が たまったとき","たまる まえに あける","ぜったいに あけない"], answer:1,
+       exp:"もくひょうまで ためてから あけると、ほしいものが <ruby>買<rt>か</rt></ruby>えて うれしいね。"},
+      {type:"ox", q:"おこづかいを もらったら、ぜんぶ すぐ つかうのが ちょきんだ。", answer:1,
+       exp:"それは ちょきんの はんたい! つかわずに とっておくのが ちょきんだよ。"},
+      {type:"choice", q:"200<ruby>円<rt>えん</rt></ruby>ずつ 3かい ためると、いくらに なる?",
+       choices:["200<ruby>円<rt>えん</rt></ruby>","400<ruby>円<rt>えん</rt></ruby>","600<ruby>円<rt>えん</rt></ruby>","800<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"200 + 200 + 200 = 600<ruby>円<rt>えん</rt></ruby>! かけざんだと 200 × 3 = 600<ruby>円<rt>えん</rt></ruby>だね。"},
+      {type:"ox", q:"ためたお<ruby>金<rt>かね</rt></ruby>は、じぶんの すきなことに つかっていい。", answer:0,
+       exp:"がんばって ためた お<ruby>金<rt>かね</rt></ruby>だもんね。ほしいものを <ruby>買<rt>か</rt></ruby>うのは ちょきんの たのしみだよ。"},
+      {type:"choice", q:"まいにち 10<ruby>円<rt>えん</rt></ruby>ずつ ためると、10<ruby>日<rt>にち</rt></ruby>で いくらに なる?",
+       choices:["10<ruby>円<rt>えん</rt></ruby>","50<ruby>円<rt>えん</rt></ruby>","100<ruby>円<rt>えん</rt></ruby>","1000<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"10<ruby>円<rt>えん</rt></ruby> × 10<ruby>日<rt>にち</rt></ruby> = 100<ruby>円<rt>えん</rt></ruby>! すこしでも、まいにち つづけると たまるんだね。"},
+      {type:"ox", q:"ちょきんばこが なくても、ふうとうや びんで お<ruby>金<rt>かね</rt></ruby>を ためられる。", answer:0,
+       exp:"いれものは なんでも だいじょうぶ。「ためる ばしょ」を きめるのが だいじなんだ。"},
+      {type:"choice", q:"2000<ruby>円<rt>えん</rt></ruby>の ゲームソフトが ほしい。まいつき 500<ruby>円<rt>えん</rt></ruby> ためると、なんかげつで <ruby>買<rt>か</rt></ruby>える?",
+       choices:["2かげつ","3かげつ","4かげつ","5かげつ"], answer:2,
+       exp:"500<ruby>円<rt>えん</rt></ruby> × 4かげつ = 2000<ruby>円<rt>えん</rt></ruby>! ゴールが ちかづくと たのしいね。"},
+      {type:"ox", q:"ためた お<ruby>金<rt>かね</rt></ruby>を ときどき かぞえると、やるきが つづく。", answer:0,
+       exp:"「こんなに たまった!」と わかると、もっと ためたく なるよね。"},
+      {type:"choice", q:"ちょきんの もくひょうとして いちばん よいのは どれ?",
+       choices:["いつか なにかを <ruby>買<rt>か</rt></ruby>う","3かげつで 600<ruby>円<rt>えん</rt></ruby> ためて <ruby>本<rt>ほん</rt></ruby>を <ruby>買<rt>か</rt></ruby>う","ためられたら ためる","なにも きめない"], answer:1,
+       exp:"「いつまでに・いくら・なんのため」が はっきりしていると、がんばりやすいんだ。"},
+      {type:"ox", q:"おこづかいを もらって すぐ ぜんぶ つかうと、ちょきんは できない。", answer:0,
+       exp:"さきに ためるぶんを わけてから つかうと、しぜんに たまるよ。"},
+      {type:"choice", q:"100<ruby>円玉<rt>えんだま</rt></ruby>だけで 1000<ruby>円<rt>えん</rt></ruby> ためるには、なんまい ひつよう?",
+       choices:["5まい","10まい","50まい","100まい"], answer:1,
+       exp:"100<ruby>円<rt>えん</rt></ruby> × 10まい = 1000<ruby>円<rt>えん</rt></ruby>。ちりも つもれば やまと なる、だね。"},
+      {type:"ox", q:"ちょきんは、たくさんの お<ruby>金<rt>かね</rt></ruby>が ないと はじめられない。", answer:1,
+       exp:"1<ruby>円<rt>えん</rt></ruby>からでも はじめられるよ。すこしずつでも つづける ことが たいせつなんだ。"},
+      {type:"choice", q:"ためる お<ruby>金<rt>かね</rt></ruby>と つかう お<ruby>金<rt>かね</rt></ruby>は、どうすると わかりやすい?",
+       choices:["ちょきんばこと さいふに わける","ぜんぶ ポケットに いれる","つくえに ばらばらに おく","かんがえない"], answer:0,
+       exp:"「ためる ばしょ」と「つかう ばしょ」を わけるのが、まぜない コツだよ。"},
+      {type:"ox", q:"きゅうに ひつような ことが できたとき、ちょきんが あると たすかる。", answer:0,
+       exp:"まさかの ときの おまもりに なるのが ちょきん。あんしんが ふえるね。"},
+      {type:"choice", q:"1しゅうかんに 50<ruby>円<rt>えん</rt></ruby>ずつ ためると、4しゅうかんで いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","150<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","250<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"50<ruby>円<rt>えん</rt></ruby> × 4かい = 200<ruby>円<rt>えん</rt></ruby>。まいしゅう こつこつ、が きいてくるね。"},
+      {type:"ox", q:"ちょきんを つづけると、がまんする ちからも そだつ。", answer:0,
+       exp:"「いま つかいたい」を ちょっと がまん。この ちからは べんきょうにも やくだつよ。"},
+      {type:"choice", q:"ためた 1000<ruby>円<rt>えん</rt></ruby>で 800<ruby>円<rt>えん</rt></ruby>の <ruby>本<rt>ほん</rt></ruby>を <ruby>買<rt>か</rt></ruby>うと、のこりは?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","0<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"1000 − 800 = 200<ruby>円<rt>えん</rt></ruby>。のこった お<ruby>金<rt>かね</rt></ruby>は また ちょきんに まわせるね。"},
+      {type:"ox", q:"おともだちが ためていないなら、じぶんも ためなくて よい。", answer:1,
+       exp:"ちょきんは じぶんの もくひょうの ため。<ruby>人<rt>ひと</rt></ruby>と くらべなくて いいんだよ。"},
+      {type:"choice", q:"ながく ためつづける コツは どれ?",
+       choices:["むりの ない きんがくに する","いきなり ぜんぶ ためる","すぐ あきらめる","きぶんで やめる"], answer:0,
+       exp:"むりを すると つづかない。じぶんに あった ペースが いちばんだよ。"},
+      {type:"ox", q:"めあての ものが <ruby>買<rt>か</rt></ruby>えたら、つぎの もくひょうを きめると よい。", answer:0,
+       exp:"「つぎは なにを めざそうかな?」と かんがえるのも、ちょきんの たのしみだね。"},
+      {type:"choice", q:"300<ruby>円<rt>えん</rt></ruby>の ちょきんと 700<ruby>円<rt>えん</rt></ruby>の ちょきんを あわせると、いくら?",
+       choices:["900<ruby>円<rt>えん</rt></ruby>","1000<ruby>円<rt>えん</rt></ruby>","1100<ruby>円<rt>えん</rt></ruby>","370<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"300 + 700 = 1000<ruby>円<rt>えん</rt></ruby>! あわせると <ruby>大<rt>おお</rt></ruby>きな きんがくに なるね。"},
+    ]
+  },
+  {
+    name: "かいもの・ねだんのしくみ",
+    questions: [
+      {type:"choice", q:"100<ruby>円<rt>えん</rt></ruby>の おかしを 2つ <ruby>買<rt>か</rt></ruby>うと、いくらに なる?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","150<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby> + 100<ruby>円<rt>えん</rt></ruby> = 200<ruby>円<rt>えん</rt></ruby>! <ruby>買<rt>か</rt></ruby>うかずが ふえると、はらうお<ruby>金<rt>かね</rt></ruby>も ふえるよ。"},
+      {type:"ox", q:"おなじ おかしでも、お<ruby>店<rt>みせ</rt></ruby>によって ねだんが ちがうことが ある。", answer:0,
+       exp:"そのとおり! お<ruby>店<rt>みせ</rt></ruby>ごとに ねだんは ちがうことがあるよ。くらべてみると おもしろいね。"},
+      {type:"choice", q:"150<ruby>円<rt>えん</rt></ruby>の ジュースを 200<ruby>円<rt>えん</rt></ruby>で <ruby>買<rt>か</rt></ruby>うと、おつりは いくら?",
+       choices:["30<ruby>円<rt>えん</rt></ruby>","50<ruby>円<rt>えん</rt></ruby>","70<ruby>円<rt>えん</rt></ruby>","100<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"200<ruby>円<rt>えん</rt></ruby> − 150<ruby>円<rt>えん</rt></ruby> = 50<ruby>円<rt>えん</rt></ruby>。おつりは「はらったお<ruby>金<rt>かね</rt></ruby> − ねだん」で わかるよ。"},
+      {type:"ox", q:"レシートは、<ruby>買<rt>か</rt></ruby>ったものと ねだんが かいてある かみ。", answer:0,
+       exp:"レシートを<ruby>見<rt>み</rt></ruby>ると、なにを いくらで <ruby>買<rt>か</rt></ruby>ったかが わかるよ。おこづかいちょうにも やくだつね。"},
+      {type:"choice", q:"「セール」って なんのこと?",
+       choices:["ねだんが たかくなること","ねだんが やすくなること","お<ruby>店<rt>みせ</rt></ruby>が おやすみになること","あたらしい おかしのなまえ"], answer:1,
+       exp:"セールは ねだんが やすくなること。でも「やすいから」だけで <ruby>買<rt>か</rt></ruby>わずに、いるかどうかも かんがえよう。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>うまえに ねだんを たしかめるのは、よいこと。", answer:0,
+       exp:"だいせいかい! ねだんを たしかめると、もっているお<ruby>金<rt>かね</rt></ruby>で <ruby>買<rt>か</rt></ruby>えるか わかるよ。"},
+      {type:"choice", q:"300<ruby>円<rt>えん</rt></ruby> もっています。<ruby>買<rt>か</rt></ruby>えるのは どれかな?",
+       choices:["350<ruby>円<rt>えん</rt></ruby>の ぬいぐるみ","400<ruby>円<rt>えん</rt></ruby>の <ruby>本<rt>ほん</rt></ruby>","250<ruby>円<rt>えん</rt></ruby>の パン","500<ruby>円<rt>えん</rt></ruby>の おもちゃ"], answer:2,
+       exp:"もっているお<ruby>金<rt>かね</rt></ruby>より やすいものだけ <ruby>買<rt>か</rt></ruby>えるよ。250<ruby>円<rt>えん</rt></ruby>なら 300<ruby>円<rt>えん</rt></ruby>で <ruby>買<rt>か</rt></ruby>えて、おつりは 50<ruby>円<rt>えん</rt></ruby>だね。"},
+      {type:"ox", q:"いちど <ruby>買<rt>か</rt></ruby>ったものは、いつでも かんたんに おかえし(へんぴん)できる。", answer:1,
+       exp:"おかえしできない ことも あるんだ。だから <ruby>買<rt>か</rt></ruby>うまえに「ほんとうに いるかな?」と かんがえようね。"},
+      {type:"choice", q:"200<ruby>円<rt>えん</rt></ruby>の パンと 100<ruby>円<rt>えん</rt></ruby>の ぎゅうにゅうを <ruby>買<rt>か</rt></ruby>うと、いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","400<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"200<ruby>円<rt>えん</rt></ruby> + 100<ruby>円<rt>えん</rt></ruby> = 300<ruby>円<rt>えん</rt></ruby>! <ruby>買<rt>か</rt></ruby>うものの ねだんを たすと、はらう お<ruby>金<rt>かね</rt></ruby>が わかるよ。"},
+      {type:"ox", q:"お<ruby>店<rt>みせ</rt></ruby>で ほしいものは、お<ruby>金<rt>かね</rt></ruby>を はらわずに もって かえっていい。", answer:1,
+       exp:"それは ぜったいダメ! お<ruby>店<rt>みせ</rt></ruby>の ものは お<ruby>金<rt>かね</rt></ruby>を はらってから もらうんだよ。"},
+      {type:"choice", q:"かいものの とき、まず たしかめる ことは どれ?",
+       choices:["いろ だけ <ruby>見<rt>み</rt></ruby>る","ねだんと もっている お<ruby>金<rt>かね</rt></ruby>","なにも <ruby>見<rt>み</rt></ruby>ない","おともだちの かお"], answer:1,
+       exp:"ねだんと じぶんの お<ruby>金<rt>かね</rt></ruby>を くらべると、<ruby>買<rt>か</rt></ruby>えるか どうか わかるよ。"},
+      {type:"ox", q:"レジで お<ruby>金<rt>かね</rt></ruby>を はらうと、おつりが かえってくることが ある。", answer:0,
+       exp:"そのとおり! はらった お<ruby>金<rt>かね</rt></ruby>が ねだんより おおいと、おつりが かえってくるよ。"},
+      {type:"choice", q:"300<ruby>円<rt>えん</rt></ruby>の おもちゃが セールで 100<ruby>円<rt>えん</rt></ruby> やすくなった。いくらで <ruby>買<rt>か</rt></ruby>える?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","400<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"300<ruby>円<rt>えん</rt></ruby> − 100<ruby>円<rt>えん</rt></ruby> = 200<ruby>円<rt>えん</rt></ruby>! セールだと やすく <ruby>買<rt>か</rt></ruby>えることが あるんだね。"},
+      {type:"ox", q:"かいものの まえに、いくら もっているか しっておくと よい。", answer:0,
+       exp:"だいせいかい! もっている お<ruby>金<rt>かね</rt></ruby>が わかれば、なにが <ruby>買<rt>か</rt></ruby>えるか かんがえられるよ。"},
+      {type:"choice", q:"500<ruby>円<rt>えん</rt></ruby> もっています。ぜんぶ つかわずに すむのは どれ?",
+       choices:["500<ruby>円<rt>えん</rt></ruby>の <ruby>本<rt>ほん</rt></ruby>","450<ruby>円<rt>えん</rt></ruby>の ぬりえ","500<ruby>円<rt>えん</rt></ruby>の ゲーム","600<ruby>円<rt>えん</rt></ruby>の おもちゃ"], answer:1,
+       exp:"450<ruby>円<rt>えん</rt></ruby>なら 500<ruby>円<rt>えん</rt></ruby>で <ruby>買<rt>か</rt></ruby>えて、50<ruby>円<rt>えん</rt></ruby> のこるよ。のこった お<ruby>金<rt>かね</rt></ruby>は ちょきんできるね。"},
+      {type:"ox", q:"かいものが おわったら、レシートを もらうと よい。", answer:0,
+       exp:"レシートが あると、なにを いくらで <ruby>買<rt>か</rt></ruby>ったか あとで たしかめられるよ。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>う まえに、ほかの お<ruby>店<rt>みせ</rt></ruby>の ねだんと くらべてみると、おとくな ことが ある。", answer:0,
+       exp:"おなじ ものでも ねだんが ちがう ことが あるから、くらべてみるのは かしこいね。"},
+      {type:"choice", q:"80<ruby>円<rt>えん</rt></ruby>の ガムと 120<ruby>円<rt>えん</rt></ruby>の チョコを <ruby>買<rt>か</rt></ruby>うと、いくら?",
+       choices:["180<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","220<ruby>円<rt>えん</rt></ruby>","240<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"80 + 120 = 200<ruby>円<rt>えん</rt></ruby>。あわせた ねだんを かんがえてから レジに いこう。"},
+      {type:"ox", q:"レジでは、じゅんばんを まもって ならぶ。", answer:0,
+       exp:"みんなが <ruby>気<rt>き</rt></ruby>もちよく <ruby>買<rt>か</rt></ruby>いものできるように、じゅんばんは まもろうね。"},
+      {type:"choice", q:"たべものに かいてある「しょうみきげん」で わかるのは?",
+       choices:["おいしく たべられる めやす","ねだん","お<ruby>店<rt>みせ</rt></ruby>の なまえ","おもさ"], answer:0,
+       exp:"しょうみきげんを <ruby>見<rt>み</rt></ruby>て、おいしいうちに たべようね。"},
+      {type:"ox", q:"こうかんや おかえしを おねがいする とき、レシートが やくに たつ。", answer:0,
+       exp:"「たしかに この お<ruby>店<rt>みせ</rt></ruby>で <ruby>買<rt>か</rt></ruby>いました」の しょうこに なるからだよ。"},
+      {type:"choice", q:"1000<ruby>円<rt>えん</rt></ruby>で 600<ruby>円<rt>えん</rt></ruby>の おもちゃを <ruby>買<rt>か</rt></ruby>うと、おつりは?",
+       choices:["200<ruby>円<rt>えん</rt></ruby>","300<ruby>円<rt>えん</rt></ruby>","400<ruby>円<rt>えん</rt></ruby>","600<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"1000 − 600 = 400<ruby>円<rt>えん</rt></ruby>。おつりが あっているかも たしかめよう。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>う ものを メモして いくと、<ruby>買<rt>か</rt></ruby>いわすれや <ruby>買<rt>か</rt></ruby>いすぎが へる。", answer:0,
+       exp:"メモは <ruby>買<rt>か</rt></ruby>いものの つよい みかた。おうちの<ruby>人<rt>ひと</rt></ruby>と つくってみよう。"},
+      {type:"choice", q:"お<ruby>店<rt>みせ</rt></ruby>の しなものは、どう あつかう?",
+       choices:["やさしく ていねいに","らんぼうに","なげて あそぶ","ふんづける"], answer:0,
+       exp:"お<ruby>店<rt>みせ</rt></ruby>の しなものは、まだ みんなの もの。やさしく あつかおうね。"},
+      {type:"ox", q:"「2つで 150<ruby>円<rt>えん</rt></ruby>」のような、まとめて <ruby>買<rt>か</rt></ruby>うと やすくなる うりかたも ある。", answer:0,
+       exp:"1つ 100<ruby>円<rt>えん</rt></ruby>でも 2つで 150<ruby>円<rt>えん</rt></ruby>なら おとく。でも いらないなら <ruby>買<rt>か</rt></ruby>わない ことも だいじだよ。"},
+      {type:"choice", q:"300<ruby>円<rt>えん</rt></ruby>の おかしと 200<ruby>円<rt>えん</rt></ruby>の ジュースを あわせて <ruby>買<rt>か</rt></ruby>うと、いくら?",
+       choices:["400<ruby>円<rt>えん</rt></ruby>","500<ruby>円<rt>えん</rt></ruby>","600<ruby>円<rt>えん</rt></ruby>","320<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"300 + 200 = 500<ruby>円<rt>えん</rt></ruby>。もっている お<ruby>金<rt>かね</rt></ruby>で たりるか、さきに かんがえよう。"},
+      {type:"ox", q:"ふくろを あけてしまった おかしは、<ruby>買<rt>か</rt></ruby>わずに たなに もどして よい。", answer:1,
+       exp:"あけたら <ruby>買<rt>か</rt></ruby>うのが やくそく。まよったら、あける まえに かんがえよう。"},
+      {type:"choice", q:"おつりを うけとったら、まず なにを する?",
+       choices:["あっているか たしかめる","すぐ ポケットに つっこむ","おとしても きにしない","かぞえない"], answer:0,
+       exp:"レジの<ruby>人<rt>ひと</rt></ruby>も まちがえる ことが ある。その ばで そっと たしかめよう。"},
+      {type:"ox", q:"ねだんの シールや ねふだは、はがして あそんで よい。", answer:1,
+       exp:"ねふだが ないと、お<ruby>店<rt>みせ</rt></ruby>の<ruby>人<rt>ひと</rt></ruby>も おきゃくさんも こまってしまうよ。"},
+      {type:"choice", q:"200<ruby>円<rt>えん</rt></ruby>の ジュースが 50<ruby>円<rt>えん</rt></ruby> やすく なっています。いくらで <ruby>買<rt>か</rt></ruby>える?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","150<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>","250<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"200 − 50 = 150<ruby>円<rt>えん</rt></ruby>。「やすくなった あとの ねだん」を けいさんできると かっこいい!"},
+      {type:"ox", q:"おもい ものや <ruby>大<rt>おお</rt></ruby>きい ものを <ruby>買<rt>か</rt></ruby>う ときは、もって かえれるかも かんがえる。", answer:0,
+       exp:"<ruby>買<rt>か</rt></ruby>った あとの ことまで かんがえられると、<ruby>買<rt>か</rt></ruby>いもの めいじんだね。"},
+      {type:"choice", q:"おつかいを たのまれたら、さいしょに たしかめる ことは?",
+       choices:["<ruby>買<rt>か</rt></ruby>う ものと わたされた お<ruby>金<rt>かね</rt></ruby>","そらの いろ","ふくの もよう","なにも たしかめない"], answer:0,
+       exp:"「なにを <ruby>買<rt>か</rt></ruby>うか」「いくら もっているか」が わかれば、あんしんして おつかいに いけるね。"},
+    ]
+  }
+];
+const THEMES_HIGH = [
+  {
+    name: "<ruby>銀行<rt>ぎんこう</rt></ruby>・<ruby>貯金<rt>ちょきん</rt></ruby>のしくみ",
+    questions: [
+      {type:"ox", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>に お<ruby>金<rt>かね</rt></ruby>を <ruby>預<rt>あず</rt></ruby>けると、「<ruby>利子<rt>りし</rt></ruby>」が ついて <ruby>少<rt>すこ</rt></ruby>し <ruby>増<rt>ふ</rt></ruby>えることが ある。", answer:0,
+       exp:"<ruby>預<rt>あず</rt></ruby>けた お<ruby>礼<rt>れい</rt></ruby>として <ruby>銀行<rt>ぎんこう</rt></ruby>が <ruby>足<rt>た</rt></ruby>してくれる お<ruby>金<rt>かね</rt></ruby>を「<ruby>利子<rt>りし</rt></ruby>」と いうよ。"},
+      {type:"choice", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>の <ruby>仕事<rt>しごと</rt></ruby>で ないものは どれ?",
+       choices:["お<ruby>金<rt>かね</rt></ruby>を <ruby>預<rt>あず</rt></ruby>かる","お<ruby>金<rt>かね</rt></ruby>を <ruby>貸<rt>か</rt></ruby>す","お<ruby>金<rt>かね</rt></ruby>を <ruby>送<rt>おく</rt></ruby>る(<ruby>送金<rt>そうきん</rt></ruby>)","お<ruby>金<rt>かね</rt></ruby>を <ruby>勝手<rt>かって</rt></ruby>に <ruby>使<rt>つか</rt></ruby>う"], answer:3,
+       exp:"<ruby>銀行<rt>ぎんこう</rt></ruby>は お<ruby>金<rt>かね</rt></ruby>を <ruby>預<rt>あず</rt></ruby>かる・<ruby>貸<rt>か</rt></ruby>す・<ruby>送<rt>おく</rt></ruby>るのが <ruby>仕事<rt>しごと</rt></ruby>。<ruby>勝手<rt>かって</rt></ruby>に <ruby>使<rt>つか</rt></ruby>うことは ないよ。"},
+      {type:"ox", q:"<ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>は、<ruby>必要<rt>ひつよう</rt></ruby>な ときに <ruby>引<rt>ひ</rt></ruby>き<ruby>出<rt>だ</rt></ruby>すことが できる。", answer:0,
+       exp:"その<ruby>通<rt>とお</rt></ruby>り! <ruby>必要<rt>ひつよう</rt></ruby>な ときは <ruby>窓口<rt>まどぐち</rt></ruby>や ATMで <ruby>引<rt>ひ</rt></ruby>き<ruby>出<rt>だ</rt></ruby>せるよ。"},
+      {type:"choice", q:"「<ruby>利子<rt>りし</rt></ruby>」とは <ruby>何<rt>なに</rt></ruby>?",
+       choices:["<ruby>銀行<rt>ぎんこう</rt></ruby>に はらう お<ruby>礼<rt>れい</rt></ruby>","<ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>に つく お<ruby>礼<rt>れい</rt></ruby>","<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>一<rt>ひと</rt></ruby>つ","おつりの こと"], answer:1,
+       exp:"<ruby>預<rt>あず</rt></ruby>けてくれて ありがとう、の お<ruby>礼<rt>れい</rt></ruby>が <ruby>利子<rt>りし</rt></ruby>。<ruby>少<rt>すこ</rt></ruby>しずつ お<ruby>金<rt>かね</rt></ruby>が <ruby>増<rt>ふ</rt></ruby>えるんだ。"},
+      {type:"ox", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>に <ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>は、だれが <ruby>預<rt>あず</rt></ruby>けたか わからなくなる。", answer:1,
+       exp:"<ruby>通帳<rt>つうちょう</rt></ruby>や <ruby>記録<rt>きろく</rt></ruby>で、だれの お<ruby>金<rt>かね</rt></ruby>かが きちんと <ruby>管理<rt>かんり</rt></ruby>されているよ。"},
+      {type:"choice", q:"<ruby>貯金<rt>ちょきん</rt></ruby>を <ruby>続<rt>つづ</rt></ruby>ける コツは どれ?",
+       choices:["<ruby>目標<rt>もくひょう</rt></ruby>を <ruby>決<rt>き</rt></ruby>める","<ruby>気分<rt>きぶん</rt></ruby>で ためる","ためたら すぐ <ruby>使<rt>つか</rt></ruby>う","<ruby>記録<rt>きろく</rt></ruby>を つけない"], answer:0,
+       exp:"「<ruby>何<rt>なん</rt></ruby>のために いくら」と <ruby>目標<rt>もくひょう</rt></ruby>を <ruby>決<rt>き</rt></ruby>めると、<ruby>貯金<rt>ちょきん</rt></ruby>は <ruby>続<rt>つづ</rt></ruby>きやすいよ。"},
+      {type:"ox", q:"キャッシュカードの <ruby>暗証番号<rt>あんしょうばんごう</rt></ruby>は、<ruby>友達<rt>ともだち</rt></ruby>に <ruby>教<rt>おし</rt></ruby>えてよい。", answer:1,
+       exp:"<ruby>暗証番号<rt>あんしょうばんごう</rt></ruby>は お<ruby>金<rt>かね</rt></ruby>を <ruby>守<rt>まも</rt></ruby>る <ruby>大切<rt>たいせつ</rt></ruby>な <ruby>秘密<rt>ひみつ</rt></ruby>。<ruby>友達<rt>ともだち</rt></ruby>にも <ruby>教<rt>おし</rt></ruby>えないでね。"},
+      {type:"choice", q:"100<ruby>円<rt>えん</rt></ruby>を <ruby>預<rt>あず</rt></ruby>けて <ruby>利子<rt>りし</rt></ruby>が 1<ruby>円<rt>えん</rt></ruby> つくと、<ruby>合<rt>あ</rt></ruby>わせて いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","101<ruby>円<rt>えん</rt></ruby>","110<ruby>円<rt>えん</rt></ruby>","200<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"100<ruby>円<rt>えん</rt></ruby> + 1<ruby>円<rt>えん</rt></ruby> = 101<ruby>円<rt>えん</rt></ruby>。<ruby>利子<rt>りし</rt></ruby>の <ruby>分<rt>ぶん</rt></ruby>だけ <ruby>増<rt>ふ</rt></ruby>えるんだ。"},
+      {type:"ox", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>は、<ruby>預<rt>あず</rt></ruby>かった お<ruby>金<rt>かね</rt></ruby>を <ruby>会社<rt>かいしゃ</rt></ruby>や <ruby>人<rt>ひと</rt></ruby>に <ruby>貸<rt>か</rt></ruby>して、<ruby>社会<rt>しゃかい</rt></ruby>の <ruby>役<rt>やく</rt></ruby>に <ruby>立<rt>た</rt></ruby>っている。", answer:0,
+       exp:"<ruby>預<rt>あず</rt></ruby>かった お<ruby>金<rt>かね</rt></ruby>を <ruby>貸<rt>か</rt></ruby>して、<ruby>町<rt>まち</rt></ruby>や <ruby>会社<rt>かいしゃ</rt></ruby>の <ruby>活動<rt>かつどう</rt></ruby>を <ruby>支<rt>ささ</rt></ruby>えているんだ。"},
+      {type:"choice", q:"お<ruby>金<rt>かね</rt></ruby>の <ruby>増<rt>ふ</rt></ruby>やし<ruby>方<rt>かた</rt></ruby>として、いけないのは どれ?",
+       choices:["こつこつ ためる","<ruby>利子<rt>りし</rt></ruby>を <ruby>生<rt>い</rt></ruby>かす","<ruby>働<rt>はたら</rt></ruby>いて かせぐ","<ruby>人<rt>ひと</rt></ruby>を だまして お<ruby>金<rt>かね</rt></ruby>を <ruby>取<rt>と</rt></ruby>る"], answer:3,
+       exp:"<ruby>人<rt>ひと</rt></ruby>を だまして お<ruby>金<rt>かね</rt></ruby>を <ruby>取<rt>と</rt></ruby>るのは <ruby>犯罪<rt>はんざい</rt></ruby>。<ruby>絶対<rt>ぜったい</rt></ruby>に してはいけないよ。"},
+      {type:"ox", q:"<ruby>通帳<rt>つうちょう</rt></ruby>を <ruby>見<rt>み</rt></ruby>ると、お<ruby>金<rt>かね</rt></ruby>の <ruby>出<rt>だ</rt></ruby>し<ruby>入<rt>い</rt></ruby>れの <ruby>記録<rt>きろく</rt></ruby>が わかる。", answer:0,
+       exp:"いつ いくら <ruby>入<rt>い</rt></ruby>れたか・<ruby>出<rt>だ</rt></ruby>したかが、<ruby>通帳<rt>つうちょう</rt></ruby>に <ruby>記録<rt>きろく</rt></ruby>されているよ。"},
+      {type:"choice", q:"まさかの ときに <ruby>備<rt>そな</rt></ruby>えて お<ruby>金<rt>かね</rt></ruby>を ためておくことを <ruby>何<rt>なん</rt></ruby>と いう?",
+       choices:["むだづかい","<ruby>備<rt>そな</rt></ruby>えの <ruby>貯金<rt>ちょきん</rt></ruby>","<ruby>借金<rt>しゃっきん</rt></ruby>","おまけ"], answer:1,
+       exp:"まさかの ときの ための <ruby>貯金<rt>ちょきん</rt></ruby>が あると <ruby>安心<rt>あんしん</rt></ruby>だね。"},
+      {type:"ox", q:"<ruby>借金<rt>しゃっきん</rt></ruby>(お<ruby>金<rt>かね</rt></ruby>を <ruby>借<rt>か</rt></ruby>りること)は、<ruby>必<rt>かなら</rt></ruby>ず <ruby>返<rt>かえ</rt></ruby>さなくては いけない。", answer:0,
+       exp:"<ruby>借<rt>か</rt></ruby>りた お<ruby>金<rt>かね</rt></ruby>は <ruby>必<rt>かなら</rt></ruby>ず <ruby>返<rt>かえ</rt></ruby>す。これは <ruby>大切<rt>たいせつ</rt></ruby>な <ruby>約束<rt>やくそく</rt></ruby>だよ。"},
+      {type:"choice", q:"<ruby>毎月<rt>まいつき</rt></ruby> 200<ruby>円<rt>えん</rt></ruby>ずつ ためると、1<ruby>年<rt>ねん</rt></ruby>(12か<ruby>月<rt>げつ</rt></ruby>)で いくら?",
+       choices:["1200<ruby>円<rt>えん</rt></ruby>","2000<ruby>円<rt>えん</rt></ruby>","2400<ruby>円<rt>えん</rt></ruby>","6000<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"200<ruby>円<rt>えん</rt></ruby> × 12か<ruby>月<rt>げつ</rt></ruby> = 2400<ruby>円<rt>えん</rt></ruby>。こつこつが <ruby>大<rt>おお</rt></ruby>きな <ruby>力<rt>ちから</rt></ruby>に なるね。"},
+      {type:"ox", q:"ATMを <ruby>使<rt>つか</rt></ruby>うと、<ruby>銀行<rt>ぎんこう</rt></ruby>の <ruby>窓口<rt>まどぐち</rt></ruby>が <ruby>閉<rt>し</rt></ruby>まっていても お<ruby>金<rt>かね</rt></ruby>を <ruby>引<rt>ひ</rt></ruby>き<ruby>出<rt>だ</rt></ruby>せることが ある。", answer:0,
+       exp:"ATMは <ruby>機械<rt>きかい</rt></ruby>で お<ruby>金<rt>かね</rt></ruby>の <ruby>出<rt>だ</rt></ruby>し<ruby>入<rt>い</rt></ruby>れが できる <ruby>便利<rt>べんり</rt></ruby>な <ruby>装置<rt>そうち</rt></ruby>だよ。"},
+      {type:"choice", q:"<ruby>貯金<rt>ちょきん</rt></ruby>が <ruby>得意<rt>とくい</rt></ruby>な <ruby>人<rt>ひと</rt></ruby>が やっていることは どれ?",
+       choices:["<ruby>目標<rt>もくひょう</rt></ruby>の <ruby>金額<rt>きんがく</rt></ruby>と <ruby>期限<rt>きげん</rt></ruby>を <ruby>決<rt>き</rt></ruby>める","<ruby>気<rt>き</rt></ruby>が <ruby>向<rt>む</rt></ruby>いたら ためる","<ruby>全部<rt>ぜんぶ</rt></ruby> <ruby>使<rt>つか</rt></ruby>ってから <ruby>考<rt>かんが</rt></ruby>える","<ruby>記録<rt>きろく</rt></ruby>を つけない"], answer:0,
+       exp:"「いつまでに いくら」を <ruby>決<rt>き</rt></ruby>めて <ruby>記録<rt>きろく</rt></ruby>すると、<ruby>貯金<rt>ちょきん</rt></ruby>は <ruby>成功<rt>せいこう</rt></ruby>しやすいよ。"},
+      {type:"ox", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>に お<ruby>金<rt>かね</rt></ruby>を <ruby>預<rt>あず</rt></ruby>けることを「<ruby>預金<rt>よきん</rt></ruby>」と いう。", answer:0,
+       exp:"<ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>の ことも <ruby>預金<rt>よきん</rt></ruby>と いうよ。<ruby>通帳<rt>つうちょう</rt></ruby>には <ruby>預金<rt>よきん</rt></ruby>の <ruby>記録<rt>きろく</rt></ruby>が のっているんだ。"},
+      {type:"choice", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>の カードや <ruby>通帳<rt>つうちょう</rt></ruby>を なくしたら、まず どうする?",
+       choices:["すぐ <ruby>銀行<rt>ぎんこう</rt></ruby>と <ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>に れんらくする","だまって おく","<ruby>見<rt>み</rt></ruby>つかるまで ほうって おく","かくして おく"], answer:0,
+       exp:"<ruby>早<rt>はや</rt></ruby>く れんらくすれば、お<ruby>金<rt>かね</rt></ruby>を <ruby>守<rt>まも</rt></ruby>る <ruby>手<rt>て</rt></ruby>つづきを して もらえるよ。"},
+      {type:"ox", q:"<ruby>利子<rt>りし</rt></ruby>の つき<ruby>方<rt>かた</rt></ruby>は、<ruby>銀行<rt>ぎんこう</rt></ruby>や <ruby>預<rt>あず</rt></ruby>け<ruby>方<rt>かた</rt></ruby>に よって ちがう。", answer:0,
+       exp:"<ruby>同<rt>おな</rt></ruby>じ 100<ruby>円<rt>えん</rt></ruby>でも、つく <ruby>利子<rt>りし</rt></ruby>は <ruby>同<rt>おな</rt></ruby>じとは かぎらないんだ。"},
+      {type:"choice", q:"「<ruby>引<rt>ひ</rt></ruby>き<ruby>出<rt>だ</rt></ruby>し」とは、どういう <ruby>意味<rt>いみ</rt></ruby>?",
+       choices:["<ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>を <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>る こと","お<ruby>金<rt>かね</rt></ruby>を <ruby>捨<rt>す</rt></ruby>てる こと","<ruby>借金<rt>しゃっきん</rt></ruby>を する こと","<ruby>税金<rt>ぜいきん</rt></ruby>を はらう こと"], answer:0,
+       exp:"<ruby>銀行<rt>ぎんこう</rt></ruby>に <ruby>預<rt>あず</rt></ruby>けた お<ruby>金<rt>かね</rt></ruby>を <ruby>出<rt>だ</rt></ruby>して <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>ることを、<ruby>引<rt>ひ</rt></ruby>き<ruby>出<rt>だ</rt></ruby>しと いうよ。"},
+      {type:"ox", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>は、お<ruby>金<rt>かね</rt></ruby>を <ruby>貸<rt>か</rt></ruby>した <ruby>相手<rt>あいて</rt></ruby>から <ruby>利子<rt>りし</rt></ruby>を <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>ることが ある。", answer:0,
+       exp:"<ruby>貸<rt>か</rt></ruby>すときの <ruby>利子<rt>りし</rt></ruby>が、<ruby>銀行<rt>ぎんこう</rt></ruby>の <ruby>仕事<rt>しごと</rt></ruby>を <ruby>支<rt>ささ</rt></ruby>える お<ruby>金<rt>かね</rt></ruby>の <ruby>一<rt>ひと</rt></ruby>つに なっているんだ。"},
+      {type:"choice", q:"5000<ruby>円<rt>えん</rt></ruby>を <ruby>目標<rt>もくひょう</rt></ruby>に、<ruby>毎月<rt>まいつき</rt></ruby> 500<ruby>円<rt>えん</rt></ruby> ためると <ruby>何<rt>なん</rt></ruby>か<ruby>月<rt>げつ</rt></ruby> かかる?",
+       choices:["5か<ruby>月<rt>げつ</rt></ruby>","8か<ruby>月<rt>げつ</rt></ruby>","10か<ruby>月<rt>げつ</rt></ruby>","12か<ruby>月<rt>げつ</rt></ruby>"], answer:2,
+       exp:"500<ruby>円<rt>えん</rt></ruby> × 10か<ruby>月<rt>げつ</rt></ruby> = 5000<ruby>円<rt>えん</rt></ruby>。<ruby>計算<rt>けいさん</rt></ruby>できると <ruby>計画<rt>けいかく</rt></ruby>が <ruby>立<rt>た</rt></ruby>てられるね。"},
+      {type:"ox", q:"<ruby>貯金<rt>ちょきん</rt></ruby>は、<ruby>少<rt>すく</rt></ruby>ない <ruby>金額<rt>きんがく</rt></ruby>からでも <ruby>始<rt>はじ</rt></ruby>められる。", answer:0,
+       exp:"10<ruby>円<rt>えん</rt></ruby>でも 100<ruby>円<rt>えん</rt></ruby>でも りっぱな <ruby>貯金<rt>ちょきん</rt></ruby>。まず <ruby>始<rt>はじ</rt></ruby>める ことが <ruby>大切<rt>たいせつ</rt></ruby>だよ。"},
+      {type:"choice", q:"<ruby>預金<rt>よきん</rt></ruby><ruby>通帳<rt>つうちょう</rt></ruby>で わからない ものは どれ?",
+       choices:["お<ruby>金<rt>かね</rt></ruby>の <ruby>出<rt>だ</rt></ruby>し<ruby>入<rt>い</rt></ruby>れの <ruby>記録<rt>きろく</rt></ruby>","のこっている <ruby>金額<rt>きんがく</rt></ruby>","<ruby>出<rt>だ</rt></ruby>し<ruby>入<rt>い</rt></ruby>れした ひづけ","<ruby>友達<rt>ともだち</rt></ruby>の <ruby>秘密<rt>ひみつ</rt></ruby>"], answer:3,
+       exp:"<ruby>通帳<rt>つうちょう</rt></ruby>は <ruby>自分<rt>じぶん</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>の <ruby>記録<rt>きろく</rt></ruby>。<ruby>友達<rt>ともだち</rt></ruby>の <ruby>秘密<rt>ひみつ</rt></ruby>は のって いないよ。"},
+      {type:"ox", q:"インターネットで <ruby>使<rt>つか</rt></ruby>える <ruby>銀行<rt>ぎんこう</rt></ruby>も ある。", answer:0,
+       exp:"<ruby>家<rt>いえ</rt></ruby>に いながら <ruby>預<rt>あず</rt></ruby>け<ruby>入<rt>い</rt></ruby>れや <ruby>送金<rt>そうきん</rt></ruby>が できる <ruby>銀行<rt>ぎんこう</rt></ruby>も <ruby>増<rt>ふ</rt></ruby>えているんだ。"},
+      {type:"choice", q:"お<ruby>金<rt>かね</rt></ruby>を <ruby>借<rt>か</rt></ruby>りる とき、いちばん <ruby>大切<rt>たいせつ</rt></ruby>な ことは?",
+       choices:["<ruby>返<rt>かえ</rt></ruby>す <ruby>計画<rt>けいかく</rt></ruby>を <ruby>考<rt>かんが</rt></ruby>えて おく","<ruby>返<rt>かえ</rt></ruby>さないで おく","かくれて <ruby>借<rt>か</rt></ruby>りる","たくさん <ruby>借<rt>か</rt></ruby>りる ほど よい"], answer:0,
+       exp:"<ruby>借<rt>か</rt></ruby>りた お<ruby>金<rt>かね</rt></ruby>には <ruby>利子<rt>りし</rt></ruby>も つく。<ruby>返<rt>かえ</rt></ruby>せるかを <ruby>先<rt>さき</rt></ruby>に <ruby>考<rt>かんが</rt></ruby>えるのが <ruby>大切<rt>たいせつ</rt></ruby>だよ。"},
+      {type:"ox", q:"<ruby>貯金箱<rt>ちょきんばこ</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>には、<ruby>利子<rt>りし</rt></ruby>は つかない。", answer:0,
+       exp:"<ruby>利子<rt>りし</rt></ruby>が つくのは <ruby>銀行<rt>ぎんこう</rt></ruby>などに <ruby>預<rt>あず</rt></ruby>けた とき。<ruby>貯金箱<rt>ちょきんばこ</rt></ruby>は <ruby>自分<rt>じぶん</rt></ruby>で <ruby>守<rt>まも</rt></ruby>る <ruby>貯金<rt>ちょきん</rt></ruby>だね。"},
+      {type:"choice", q:"1<ruby>年<rt>ねん</rt></ruby>に 100<ruby>円<rt>えん</rt></ruby>の <ruby>利子<rt>りし</rt></ruby>が つく <ruby>預金<rt>よきん</rt></ruby>。10<ruby>年<rt>ねん</rt></ruby>では <ruby>合計<rt>ごうけい</rt></ruby> いくらの <ruby>利子<rt>りし</rt></ruby>?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","500<ruby>円<rt>えん</rt></ruby>","1000<ruby>円<rt>えん</rt></ruby>","10000<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby> × 10<ruby>年<rt>ねん</rt></ruby> = 1000<ruby>円<rt>えん</rt></ruby>。<ruby>長<rt>なが</rt></ruby>く <ruby>預<rt>あず</rt></ruby>けるほど <ruby>利子<rt>りし</rt></ruby>は <ruby>増<rt>ふ</rt></ruby>えていくんだ。"},
+      {type:"ox", q:"<ruby>家族<rt>かぞく</rt></ruby>の ものでも、<ruby>人<rt>ひと</rt></ruby>の <ruby>通帳<rt>つうちょう</rt></ruby>や カードを <ruby>勝手<rt>かって</rt></ruby>に <ruby>使<rt>つか</rt></ruby>っては いけない。", answer:0,
+       exp:"お<ruby>金<rt>かね</rt></ruby>は <ruby>一人<rt>ひとり</rt></ruby>ひとりの もの。<ruby>家族<rt>かぞく</rt></ruby>でも きちんと ことわってからだよ。"},
+      {type:"choice", q:"<ruby>銀行<rt>ぎんこう</rt></ruby>に <ruby>預<rt>あず</rt></ruby>ける よい<ruby>点<rt>てん</rt></ruby>は どれ?",
+       choices:["なくす <ruby>心配<rt>しんぱい</rt></ruby>が <ruby>減<rt>へ</rt></ruby>る","<ruby>必<rt>かなら</rt></ruby>ず 2ばいに なる","<ruby>何<rt>なん</rt></ruby>でも <ruby>無料<rt>むりょう</rt></ruby>に なる","<ruby>使<rt>つか</rt></ruby>えなく なる"], answer:0,
+       exp:"<ruby>家<rt>いえ</rt></ruby>に おいて おくより、なくす <ruby>心配<rt>しんぱい</rt></ruby>が <ruby>減<rt>へ</rt></ruby>るんだ。"},
+      {type:"ox", q:"<ruby>給料<rt>きゅうりょう</rt></ruby>を <ruby>銀行<rt>ぎんこう</rt></ruby>の <ruby>口座<rt>こうざ</rt></ruby>で <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>る <ruby>人<rt>ひと</rt></ruby>も <ruby>多<rt>おお</rt></ruby>い。", answer:0,
+       exp:"はたらいた お<ruby>金<rt>かね</rt></ruby>が、<ruby>口座<rt>こうざ</rt></ruby>に <ruby>届<rt>とど</rt></ruby>く しくみも あるよ。"},
+      {type:"choice", q:"<ruby>貯金<rt>ちょきん</rt></ruby>の <ruby>記録<rt>きろく</rt></ruby>を つける よい<ruby>点<rt>てん</rt></ruby>は?",
+       choices:["いくら たまったか すぐ わかる","お<ruby>金<rt>かね</rt></ruby>が <ruby>消<rt>け</rt></ruby>えて しまう","<ruby>目標<rt>もくひょう</rt></ruby>が わからなく なる","<ruby>意味<rt>いみ</rt></ruby>は ない"], answer:0,
+       exp:"<ruby>記録<rt>きろく</rt></ruby>が あると、<ruby>目標<rt>もくひょう</rt></ruby>まで あと いくらかが すぐに わかるよ。"},
+    ]
+  },
+  {
+    name: "<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>と けいやく",
+    questions: [
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>は、お<ruby>金<rt>かね</rt></ruby>を はらって <ruby>品物<rt>しなもの</rt></ruby>を <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>る「<ruby>約束<rt>やくそく</rt></ruby>(けいやく)」の <ruby>一<rt>ひと</rt></ruby>つだ。", answer:0,
+       exp:"お<ruby>金<rt>かね</rt></ruby>を はらう、<ruby>品物<rt>しなもの</rt></ruby>を わたす。おたがいの <ruby>約束<rt>やくそく</rt></ruby>が <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>なんだ。"},
+      {type:"choice", q:"いくつかの お<ruby>店<rt>みせ</rt></ruby>の <ruby>値段<rt>ねだん</rt></ruby>を <ruby>比<rt>くら</rt></ruby>べてから <ruby>買<rt>か</rt></ruby>うことを <ruby>何<rt>なん</rt></ruby>と いう?",
+       choices:["<ruby>比<rt>くら</rt></ruby>べて <ruby>買<rt>か</rt></ruby>う","しょうどう<ruby>買<rt>か</rt></ruby>い","ただ<ruby>買<rt>か</rt></ruby>い","くじ<ruby>引<rt>ひ</rt></ruby>き"], answer:0,
+       exp:"<ruby>値段<rt>ねだん</rt></ruby>や <ruby>内容<rt>ないよう</rt></ruby>を <ruby>比<rt>くら</rt></ruby>べてから <ruby>選<rt>えら</rt></ruby>ぶと、かしこい <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>が できるよ。"},
+      {type:"ox", q:"「<ruby>今<rt>いま</rt></ruby>だけ」「<ruby>限定<rt>げんてい</rt></ruby>」と <ruby>書<rt>か</rt></ruby>いてあれば、<ruby>必<rt>かなら</rt></ruby>ず <ruby>買<rt>か</rt></ruby>うべきだ。", answer:1,
+       exp:"<ruby>言葉<rt>ことば</rt></ruby>に あわてず、「<ruby>本当<rt>ほんとう</rt></ruby>に <ruby>必要<rt>ひつよう</rt></ruby>?」と <ruby>一度<rt>いちど</rt></ruby> <ruby>考<rt>かんが</rt></ruby>えよう。"},
+      {type:"choice", q:"<ruby>消費税<rt>しょうひぜい</rt></ruby>が 10%の とき、100<ruby>円<rt>えん</rt></ruby>の <ruby>品物<rt>しなもの</rt></ruby>の しはらいは いくら?",
+       choices:["100<ruby>円<rt>えん</rt></ruby>","105<ruby>円<rt>えん</rt></ruby>","110<ruby>円<rt>えん</rt></ruby>","120<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"100<ruby>円<rt>えん</rt></ruby> + <ruby>税金<rt>ぜいきん</rt></ruby>10<ruby>円<rt>えん</rt></ruby> = 110<ruby>円<rt>えん</rt></ruby>。<ruby>消費税<rt>しょうひぜい</rt></ruby>の <ruby>分<rt>ぶん</rt></ruby>も <ruby>忘<rt>わす</rt></ruby>れずにね。"},
+      {type:"ox", q:"レシートは、<ruby>買<rt>か</rt></ruby>った しょうこに なる <ruby>大切<rt>たいせつ</rt></ruby>な <ruby>紙<rt>かみ</rt></ruby>だ。", answer:0,
+       exp:"レシートが あれば、いつ <ruby>何<rt>なに</rt></ruby>を いくらで <ruby>買<rt>か</rt></ruby>ったか <ruby>証明<rt>しょうめい</rt></ruby>できるよ。"},
+      {type:"choice", q:"こわれた <ruby>品物<rt>しなもの</rt></ruby>が <ruby>届<rt>とど</rt></ruby>いたら、まず どうする?",
+       choices:["だまって <ruby>捨<rt>す</rt></ruby>てる","お<ruby>店<rt>みせ</rt></ruby>に れんらくする","むりやり <ruby>使<rt>つか</rt></ruby>う","<ruby>悪口<rt>わるぐち</rt></ruby>を <ruby>広<rt>ひろ</rt></ruby>める"], answer:1,
+       exp:"まずは お<ruby>店<rt>みせ</rt></ruby>に れんらく。<ruby>取<rt>と</rt></ruby>りかえて もらえることも あるよ。"},
+      {type:"ox", q:"<ruby>広告<rt>こうこく</rt></ruby>は、<ruby>品物<rt>しなもの</rt></ruby>を よく <ruby>見<rt>み</rt></ruby>せる <ruby>工夫<rt>くふう</rt></ruby>が されていることが ある。", answer:0,
+       exp:"<ruby>広告<rt>こうこく</rt></ruby>には <ruby>買<rt>か</rt></ruby>ってほしい <ruby>工夫<rt>くふう</rt></ruby>が いっぱい。<ruby>自分<rt>じぶん</rt></ruby>で <ruby>考<rt>かんが</rt></ruby>えて <ruby>選<rt>えら</rt></ruby>ぼう。"},
+      {type:"choice", q:"「<ruby>予算<rt>よさん</rt></ruby>」とは <ruby>何<rt>なに</rt></ruby>?",
+       choices:["<ruby>使<rt>つか</rt></ruby>ってよい お<ruby>金<rt>かね</rt></ruby>の <ruby>計画<rt>けいかく</rt></ruby>","<ruby>借<rt>か</rt></ruby>りた お<ruby>金<rt>かね</rt></ruby>","おつり","<ruby>税金<rt>ぜいきん</rt></ruby>"], answer:0,
+       exp:"<ruby>先<rt>さき</rt></ruby>に <ruby>予算<rt>よさん</rt></ruby>を <ruby>決<rt>き</rt></ruby>めると、<ruby>使<rt>つか</rt></ruby>いすぎを <ruby>防<rt>ふせ</rt></ruby>げるよ。"},
+      {type:"ox", q:"ネットの <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>は、<ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>に <ruby>相談<rt>そうだん</rt></ruby>せずに してよい。", answer:1,
+       exp:"ネットの <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>は トラブルも ある。<ruby>必<rt>かなら</rt></ruby>ず <ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>に <ruby>相談<rt>そうだん</rt></ruby>しよう。"},
+      {type:"choice", q:"300<ruby>円<rt>えん</rt></ruby>の <ruby>品物<rt>しなもの</rt></ruby>が 2<ruby>割引<rt>わりびき</rt></ruby>。いくらに なる?",
+       choices:["240<ruby>円<rt>えん</rt></ruby>","250<ruby>円<rt>えん</rt></ruby>","260<ruby>円<rt>えん</rt></ruby>","280<ruby>円<rt>えん</rt></ruby>"], answer:0,
+       exp:"2<ruby>割引<rt>わりびき</rt></ruby>は 2<ruby>割<rt>わり</rt></ruby><ruby>分<rt>ぶん</rt></ruby> <ruby>安<rt>やす</rt></ruby>くなること。300<ruby>円<rt>えん</rt></ruby> − 60<ruby>円<rt>えん</rt></ruby> = 240<ruby>円<rt>えん</rt></ruby>だよ。"},
+      {type:"ox", q:"<ruby>同<rt>おな</rt></ruby>じ <ruby>品物<rt>しなもの</rt></ruby>でも、<ruby>季節<rt>きせつ</rt></ruby>や <ruby>時期<rt>じき</rt></ruby>によって <ruby>値段<rt>ねだん</rt></ruby>が <ruby>変<rt>か</rt></ruby>わることが ある。", answer:0,
+       exp:"<ruby>野菜<rt>やさい</rt></ruby>の <ruby>値段<rt>ねだん</rt></ruby>が <ruby>季節<rt>きせつ</rt></ruby>で <ruby>変<rt>か</rt></ruby>わるように、<ruby>値段<rt>ねだん</rt></ruby>は <ruby>動<rt>うご</rt></ruby>くものなんだ。"},
+      {type:"choice", q:"「<ruby>必要<rt>ひつよう</rt></ruby>? それとも ほしいだけ?」と <ruby>考<rt>かんが</rt></ruby>えるのは <ruby>何<rt>なん</rt></ruby>の ため?",
+       choices:["むだづかいを <ruby>防<rt>ふせ</rt></ruby>ぐ","お<ruby>店<rt>みせ</rt></ruby>を <ruby>困<rt>こま</rt></ruby>らせる","<ruby>早<rt>はや</rt></ruby>く <ruby>買<rt>か</rt></ruby>う","<ruby>値段<rt>ねだん</rt></ruby>を <ruby>忘<rt>わす</rt></ruby>れる"], answer:0,
+       exp:"<ruby>買<rt>か</rt></ruby>う<ruby>前<rt>まえ</rt></ruby>に <ruby>一言<rt>ひとこと</rt></ruby> <ruby>自分<rt>じぶん</rt></ruby>に <ruby>聞<rt>き</rt></ruby>くだけで、むだづかいが ぐっと <ruby>減<rt>へ</rt></ruby>るよ。"},
+      {type:"ox", q:"<ruby>一度<rt>いちど</rt></ruby> した <ruby>約束<rt>やくそく</rt></ruby>(けいやく)は、かんたんに <ruby>取<rt>と</rt></ruby>り<ruby>消<rt>け</rt></ruby>せない ことが ある。", answer:0,
+       exp:"だから けいやくの <ruby>前<rt>まえ</rt></ruby>には、よく <ruby>考<rt>かんが</rt></ruby>えることが <ruby>大切<rt>たいせつ</rt></ruby>なんだ。"},
+      {type:"choice", q:"1000<ruby>円<rt>えん</rt></ruby>を <ruby>持<rt>も</rt></ruby>っていて、<ruby>税<rt>ぜい</rt></ruby>こみ 980<ruby>円<rt>えん</rt></ruby>の <ruby>品物<rt>しなもの</rt></ruby>を <ruby>買<rt>か</rt></ruby>うと、おつりは?",
+       choices:["10<ruby>円<rt>えん</rt></ruby>","20<ruby>円<rt>えん</rt></ruby>","30<ruby>円<rt>えん</rt></ruby>","50<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"1000<ruby>円<rt>えん</rt></ruby> − 980<ruby>円<rt>えん</rt></ruby> = 20<ruby>円<rt>えん</rt></ruby>。<ruby>税<rt>ぜい</rt></ruby>こみの <ruby>値段<rt>ねだん</rt></ruby>で <ruby>計算<rt>けいさん</rt></ruby>しようね。"},
+      {type:"ox", q:"「<ruby>無料<rt>むりょう</rt></ruby>(ただ)」と <ruby>書<rt>か</rt></ruby>いてある ものには、<ruby>理由<rt>りゆう</rt></ruby>や <ruby>条件<rt>じょうけん</rt></ruby>が かくれていることが ある。", answer:0,
+       exp:"「<ruby>無料<rt>むりょう</rt></ruby>」の <ruby>裏側<rt>うらがわ</rt></ruby>も <ruby>考<rt>かんが</rt></ruby>えられると、かしこい <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>じょうずだよ。"},
+      {type:"choice", q:"かしこい <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>が できるのは どんな <ruby>人<rt>ひと</rt></ruby>?",
+       choices:["<ruby>考<rt>かんが</rt></ruby>えて <ruby>選<rt>えら</rt></ruby>んで <ruby>買<rt>か</rt></ruby>う <ruby>人<rt>ひと</rt></ruby>","<ruby>何<rt>なん</rt></ruby>でも すぐ <ruby>買<rt>か</rt></ruby>う <ruby>人<rt>ひと</rt></ruby>","<ruby>値段<rt>ねだん</rt></ruby>を <ruby>見<rt>み</rt></ruby>ない <ruby>人<rt>ひと</rt></ruby>","<ruby>広告<rt>こうこく</rt></ruby>を <ruby>全部<rt>ぜんぶ</rt></ruby> <ruby>信<rt>しん</rt></ruby>じる <ruby>人<rt>ひと</rt></ruby>"], answer:0,
+       exp:"<ruby>情報<rt>じょうほう</rt></ruby>に <ruby>流<rt>なが</rt></ruby>されず、<ruby>自分<rt>じぶん</rt></ruby>で <ruby>考<rt>かんが</rt></ruby>えて <ruby>選<rt>えら</rt></ruby>ぶことが <ruby>大切<rt>たいせつ</rt></ruby>だよ。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>の あと、お<ruby>店<rt>みせ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>に「ありがとう」を <ruby>伝<rt>つた</rt></ruby>えるのは よい ことだ。", answer:0,
+       exp:"<ruby>気<rt>き</rt></ruby>もちの よい やりとりは、お<ruby>店<rt>みせ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>も お<ruby>客<rt>きゃく</rt></ruby>も うれしいね。"},
+      {type:"choice", q:"レシートを もらう <ruby>理由<rt>りゆう</rt></ruby>として <ruby>正<rt>ただ</rt></ruby>しいのは?",
+       choices:["<ruby>買<rt>か</rt></ruby>った <ruby>証明<rt>しょうめい</rt></ruby>に なるから","ごみを <ruby>増<rt>ふ</rt></ruby>やす ため","もらうのが <ruby>決<rt>き</rt></ruby>まりだから しかたなく","<ruby>意味<rt>いみ</rt></ruby>は ない"], answer:0,
+       exp:"「いつ どこで いくら」の <ruby>証明<rt>しょうめい</rt></ruby>。おかえしや <ruby>家計<rt>かけい</rt></ruby>の <ruby>記録<rt>きろく</rt></ruby>に <ruby>役<rt>やく</rt></ruby><ruby>立<rt>た</rt></ruby>つよ。"},
+      {type:"ox", q:"<ruby>品物<rt>しなもの</rt></ruby>の ふくろや <ruby>箱<rt>はこ</rt></ruby>に <ruby>書<rt>か</rt></ruby>いてある せつめいを <ruby>読<rt>よ</rt></ruby>むと、<ruby>内容<rt>ないよう</rt></ruby>が わかる。", answer:0,
+       exp:"<ruby>何<rt>なに</rt></ruby>で できているか、どう <ruby>使<rt>つか</rt></ruby>うか。<ruby>読<rt>よ</rt></ruby>むと <ruby>買<rt>か</rt></ruby>う <ruby>前<rt>まえ</rt></ruby>の ヒントに なるよ。"},
+      {type:"choice", q:"「<ruby>定価<rt>ていか</rt></ruby>」とは <ruby>何<rt>なん</rt></ruby>の こと?",
+       choices:["もともと <ruby>決<rt>き</rt></ruby>められた <ruby>値段<rt>ねだん</rt></ruby>","おつりの こと","<ruby>税金<rt>ぜいきん</rt></ruby>の こと","おまけの こと"], answer:0,
+       exp:"<ruby>定価<rt>ていか</rt></ruby>より <ruby>安<rt>やす</rt></ruby>く なっていたら、<ruby>割引<rt>わりびき</rt></ruby>されて いると いうことだね。"},
+      {type:"ox", q:"ネットや カタログでの <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>でも、けいやくは <ruby>成立<rt>せいりつ</rt></ruby>する。", answer:0,
+       exp:"ボタン <ruby>一<rt>ひと</rt></ruby>つでも <ruby>約束<rt>やくそく</rt></ruby>は <ruby>約束<rt>やくそく</rt></ruby>。だから <ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>と いっしょに、が <ruby>安心<rt>あんしん</rt></ruby>なんだ。"},
+      {type:"choice", q:"1000<ruby>円<rt>えん</rt></ruby>の <ruby>品物<rt>しなもの</rt></ruby>に <ruby>消費税<rt>しょうひぜい</rt></ruby>10%が つくと、しはらいは?",
+       choices:["1000<ruby>円<rt>えん</rt></ruby>","1010<ruby>円<rt>えん</rt></ruby>","1100<ruby>円<rt>えん</rt></ruby>","1110<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"1000<ruby>円<rt>えん</rt></ruby> + <ruby>税金<rt>ぜいきん</rt></ruby>100<ruby>円<rt>えん</rt></ruby> = 1100<ruby>円<rt>えん</rt></ruby>。10%は「10<ruby>分<rt>ぶん</rt></ruby>の1」と <ruby>同<rt>おな</rt></ruby>じだよ。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>った <ruby>品物<rt>しなもの</rt></ruby>の ようすが おかしい ときは、<ruby>無理<rt>むり</rt></ruby>に <ruby>使<rt>つか</rt></ruby>わなくて よい。", answer:0,
+       exp:"まず お<ruby>店<rt>みせ</rt></ruby>に れんらく。<ruby>無理<rt>むり</rt></ruby>に <ruby>使<rt>つか</rt></ruby>うと あぶない ことも あるからね。"},
+      {type:"choice", q:"<ruby>品物<rt>しなもの</rt></ruby>を <ruby>選<rt>えら</rt></ruby>ぶ とき、<ruby>値段<rt>ねだん</rt></ruby>の ほかに <ruby>見<rt>み</rt></ruby>ると よいのは?",
+       choices:["<ruby>品質<rt>ひんしつ</rt></ruby>や <ruby>量<rt>りょう</rt></ruby>","ふくろの <ruby>色<rt>いろ</rt></ruby>だけ","ならんでいる <ruby>場所<rt>ばしょ</rt></ruby>だけ","<ruby>何<rt>なに</rt></ruby>も <ruby>見<rt>み</rt></ruby>ない"], answer:0,
+       exp:"「<ruby>安<rt>やす</rt></ruby>いけれど すぐ こわれる」も ある。<ruby>品質<rt>ひんしつ</rt></ruby>と <ruby>量<rt>りょう</rt></ruby>も <ruby>合<rt>あ</rt></ruby>わせて <ruby>考<rt>かんが</rt></ruby>えよう。"},
+      {type:"ox", q:"<ruby>一度<rt>いちど</rt></ruby>に たくさん <ruby>買<rt>か</rt></ruby>うと、かえって むだに なる ことも ある。", answer:0,
+       exp:"<ruby>使<rt>つか</rt></ruby>いきれずに <ruby>捨<rt>す</rt></ruby>てる ことに なったら もったいない。<ruby>必要<rt>ひつよう</rt></ruby>な <ruby>分<rt>ぶん</rt></ruby>だけ <ruby>買<rt>か</rt></ruby>おう。"},
+      {type:"choice", q:"「クーリングオフ」は どんな しくみ?",
+       choices:["<ruby>決<rt>き</rt></ruby>められた <ruby>期間<rt>きかん</rt></ruby>なら けいやくを やめられる","<ruby>値段<rt>ねだん</rt></ruby>が <ruby>上<rt>あ</rt></ruby>がる","<ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>減<rt>へ</rt></ruby>る","<ruby>品物<rt>しなもの</rt></ruby>が <ruby>増<rt>ふ</rt></ruby>える"], answer:0,
+       exp:"とつぜんの ほうもんはんばいなどで <ruby>使<rt>つか</rt></ruby>える、<ruby>買<rt>か</rt></ruby>う<ruby>人<rt>ひと</rt></ruby>を <ruby>守<rt>まも</rt></ruby>る しくみだよ。"},
+      {type:"ox", q:"<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>で こまった ときは、<ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>や お<ruby>店<rt>みせ</rt></ruby>に <ruby>相談<rt>そうだん</rt></ruby>できる。", answer:0,
+       exp:"<ruby>一人<rt>ひとり</rt></ruby>で かかえこまないで。<ruby>大人<rt>おとな</rt></ruby>に <ruby>相談<rt>そうだん</rt></ruby>するのが かいけつへの <ruby>近<rt>ちか</rt></ruby><ruby>道<rt>みち</rt></ruby>だよ。"},
+      {type:"choice", q:"5000<ruby>円<rt>えん</rt></ruby>の <ruby>服<rt>ふく</rt></ruby>が 3<ruby>割引<rt>わりびき</rt></ruby>に なっています。いくらで <ruby>買<rt>か</rt></ruby>える?",
+       choices:["1500<ruby>円<rt>えん</rt></ruby>","3000<ruby>円<rt>えん</rt></ruby>","3500<ruby>円<rt>えん</rt></ruby>","4500<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"3<ruby>割引<rt>わりびき</rt></ruby>は 1500<ruby>円<rt>えん</rt></ruby><ruby>引<rt>ひ</rt></ruby>き。5000<ruby>円<rt>えん</rt></ruby> − 1500<ruby>円<rt>えん</rt></ruby> = 3500<ruby>円<rt>えん</rt></ruby>だね。"},
+      {type:"ox", q:"<ruby>広告<rt>こうこく</rt></ruby>の「たった○○<ruby>円<rt>えん</rt></ruby>!」には、<ruby>小<rt>ちい</rt></ruby>さな <ruby>字<rt>じ</rt></ruby>で <ruby>条件<rt>じょうけん</rt></ruby>が <ruby>書<rt>か</rt></ruby>いてある ことも ある。", answer:0,
+       exp:"<ruby>大<rt>おお</rt></ruby>きな <ruby>字<rt>じ</rt></ruby>だけでなく、<ruby>小<rt>ちい</rt></ruby>さな <ruby>字<rt>じ</rt></ruby>まで <ruby>読<rt>よ</rt></ruby>むのが かしこい <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>だよ。"},
+      {type:"choice", q:"おこづかいで <ruby>高<rt>たか</rt></ruby>い <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>を する とき、まず する ことは?",
+       choices:["<ruby>家<rt>いえ</rt></ruby>の <ruby>人<rt>ひと</rt></ruby>に <ruby>相談<rt>そうだん</rt></ruby>する","だまって <ruby>買<rt>か</rt></ruby>う","<ruby>借金<rt>しゃっきん</rt></ruby>して <ruby>買<rt>か</rt></ruby>う","くじで <ruby>決<rt>き</rt></ruby>める"], answer:0,
+       exp:"<ruby>高<rt>たか</rt></ruby>い <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>ほど、<ruby>買<rt>か</rt></ruby>う <ruby>前<rt>まえ</rt></ruby>の <ruby>相談<rt>そうだん</rt></ruby>が <ruby>失敗<rt>しっぱい</rt></ruby>を <ruby>防<rt>ふせ</rt></ruby>いで くれるよ。"},
+      {type:"ox", q:"<ruby>品物<rt>しなもの</rt></ruby>を <ruby>受<rt>う</rt></ruby>け<ruby>取<rt>と</rt></ruby>ったら、<ruby>数<rt>かず</rt></ruby>や ようすを <ruby>確<rt>たし</rt></ruby>かめると よい。", answer:0,
+       exp:"その<ruby>場<rt>ば</rt></ruby>で <ruby>確<rt>たし</rt></ruby>かめれば、まちがいに すぐ <ruby>気<rt>き</rt></ruby>づけるからね。"},
+      {type:"choice", q:"<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby><ruby>上手<rt>じょうず</rt></ruby>な <ruby>人<rt>ひと</rt></ruby>の <ruby>行動<rt>こうどう</rt></ruby>は どれ?",
+       choices:["<ruby>予算<rt>よさん</rt></ruby>の <ruby>中<rt>なか</rt></ruby>で <ruby>計画<rt>けいかく</rt></ruby><ruby>的<rt>てき</rt></ruby>に <ruby>買<rt>か</rt></ruby>う","<ruby>全部<rt>ぜんぶ</rt></ruby> その<ruby>場<rt>ば</rt></ruby>の <ruby>気分<rt>きぶん</rt></ruby>で <ruby>買<rt>か</rt></ruby>う","<ruby>値段<rt>ねだん</rt></ruby>を <ruby>見<rt>み</rt></ruby>ないで <ruby>買<rt>か</rt></ruby>う","<ruby>広告<rt>こうこく</rt></ruby>だけで <ruby>決<rt>き</rt></ruby>める"], answer:0,
+       exp:"<ruby>予算<rt>よさん</rt></ruby>・<ruby>計画<rt>けいかく</rt></ruby>・<ruby>比<rt>くら</rt></ruby>べる。この <ruby>三<rt>みっ</rt></ruby>つが そろえば <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby><ruby>上手<rt>じょうず</rt></ruby>だ!"},
+    ]
+  },
+  {
+    name: "<ruby>税金<rt>ぜいきん</rt></ruby>と <ruby>社会<rt>しゃかい</rt></ruby>のお<ruby>金<rt>かね</rt></ruby>",
+    questions: [
+      {type:"ox", q:"<ruby>税金<rt>ぜいきん</rt></ruby>は、みんなの くらしを <ruby>支<rt>ささ</rt></ruby>えるために <ruby>国<rt>くに</rt></ruby>や <ruby>町<rt>まち</rt></ruby>に <ruby>納<rt>おさ</rt></ruby>める お<ruby>金<rt>かね</rt></ruby>だ。", answer:0,
+       exp:"<ruby>学校<rt>がっこう</rt></ruby>も <ruby>道路<rt>どうろ</rt></ruby>も、みんなが はらう <ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>えられているんだ。"},
+      {type:"choice", q:"<ruby>税金<rt>ぜいきん</rt></ruby>で つくられたり <ruby>動<rt>うご</rt></ruby>いたり しているのは どれ?",
+       choices:["<ruby>学校<rt>がっこう</rt></ruby>や <ruby>道路<rt>どうろ</rt></ruby>","おかしの お<ruby>店<rt>みせ</rt></ruby>","ゲーム<ruby>会社<rt>かいしゃ</rt></ruby>","ふつうの スーパー"], answer:0,
+       exp:"<ruby>学校<rt>がっこう</rt></ruby>や <ruby>道路<rt>どうろ</rt></ruby>、<ruby>公園<rt>こうえん</rt></ruby>などは、<ruby>税金<rt>ぜいきん</rt></ruby>で つくられ、<ruby>守<rt>まも</rt></ruby>られているよ。"},
+      {type:"ox", q:"<ruby>消費税<rt>しょうひぜい</rt></ruby>は、<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>の ときに はらう <ruby>税金<rt>ぜいきん</rt></ruby>だ。", answer:0,
+       exp:"<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>の ときに はらう <ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>消費税<rt>しょうひぜい</rt></ruby>。レシートにも <ruby>書<rt>か</rt></ruby>いてあるよ。"},
+      {type:"choice", q:"<ruby>消費税<rt>しょうひぜい</rt></ruby>が 8%の とき、200<ruby>円<rt>えん</rt></ruby>の おかしの <ruby>税金<rt>ぜいきん</rt></ruby><ruby>分<rt>ぶん</rt></ruby>は いくら?",
+       choices:["8<ruby>円<rt>えん</rt></ruby>","16<ruby>円<rt>えん</rt></ruby>","20<ruby>円<rt>えん</rt></ruby>","28<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"200<ruby>円<rt>えん</rt></ruby> × 8% = 16<ruby>円<rt>えん</rt></ruby>。100<ruby>円<rt>えん</rt></ruby>なら 8<ruby>円<rt>えん</rt></ruby>だね。"},
+      {type:"ox", q:"<ruby>税金<rt>ぜいきん</rt></ruby>が なくなると、ごみ<ruby>集<rt>あつ</rt></ruby>めや <ruby>消防<rt>しょうぼう</rt></ruby>などが <ruby>困<rt>こま</rt></ruby>ってしまう。", answer:0,
+       exp:"ごみ<ruby>集<rt>あつ</rt></ruby>め、<ruby>消防<rt>しょうぼう</rt></ruby>、<ruby>警察<rt>けいさつ</rt></ruby>。くらしを <ruby>守<rt>まも</rt></ruby>る <ruby>仕事<rt>しごと</rt></ruby>は <ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>動<rt>うご</rt></ruby>いているんだ。"},
+      {type:"choice", q:"<ruby>集<rt>あつ</rt></ruby>めた <ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>を <ruby>決<rt>き</rt></ruby>めるのは どこ?",
+       choices:["<ruby>国<rt>くに</rt></ruby>や <ruby>町<rt>まち</rt></ruby>の <ruby>議会<rt>ぎかい</rt></ruby>","コンビニ","<ruby>銀行<rt>ぎんこう</rt></ruby>","<ruby>有名<rt>ゆうめい</rt></ruby>な <ruby>人<rt>ひと</rt></ruby>"], answer:0,
+       exp:"みんなから <ruby>集<rt>あつ</rt></ruby>めた お<ruby>金<rt>かね</rt></ruby>だから、<ruby>国<rt>くに</rt></ruby>や <ruby>町<rt>まち</rt></ruby>の <ruby>議会<rt>ぎかい</rt></ruby>で <ruby>話<rt>はな</rt></ruby>し<ruby>合<rt>あ</rt></ruby>って <ruby>決<rt>き</rt></ruby>めるんだ。"},
+      {type:"ox", q:"<ruby>図書館<rt>としょかん</rt></ruby>や <ruby>公園<rt>こうえん</rt></ruby>も、<ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>えられている。", answer:0,
+       exp:"ただで <ruby>使<rt>つか</rt></ruby>えるように <ruby>見<rt>み</rt></ruby>えても、<ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>支<rt>ささ</rt></ruby>えてくれているんだね。"},
+      {type:"choice", q:"「<ruby>納税<rt>のうぜい</rt></ruby>」とは どういう <ruby>意味<rt>いみ</rt></ruby>?",
+       choices:["<ruby>税金<rt>ぜいきん</rt></ruby>を <ruby>納<rt>おさ</rt></ruby>めること","<ruby>貯金<rt>ちょきん</rt></ruby>すること","<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>すること","おこづかいを もらうこと"], answer:0,
+       exp:"<ruby>税金<rt>ぜいきん</rt></ruby>を <ruby>納<rt>おさ</rt></ruby>めることを「<ruby>納税<rt>のうぜい</rt></ruby>」と いうよ。"},
+      {type:"ox", q:"<ruby>働<rt>はたら</rt></ruby>いて もらう <ruby>給料<rt>きゅうりょう</rt></ruby>からも、<ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>納<rt>おさ</rt></ruby>められている。", answer:0,
+       exp:"<ruby>働<rt>はたら</rt></ruby>く <ruby>人<rt>ひと</rt></ruby>は、<ruby>給料<rt>きゅうりょう</rt></ruby>の <ruby>中<rt>なか</rt></ruby>から <ruby>税金<rt>ぜいきん</rt></ruby>を <ruby>納<rt>おさ</rt></ruby>めているんだ。"},
+      {type:"choice", q:"<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>として まちがっているのは どれ?",
+       choices:["<ruby>道路<rt>どうろ</rt></ruby>の <ruby>工事<rt>こうじ</rt></ruby>","<ruby>学校<rt>がっこう</rt></ruby>の <ruby>運営<rt>うんえい</rt></ruby>","<ruby>警察<rt>けいさつ</rt></ruby>や <ruby>消防<rt>しょうぼう</rt></ruby>","だれかの <ruby>個人的<rt>こじんてき</rt></ruby>な <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>"], answer:3,
+       exp:"<ruby>税金<rt>ぜいきん</rt></ruby>は みんなのために <ruby>使<rt>つか</rt></ruby>う お<ruby>金<rt>かね</rt></ruby>。<ruby>個人<rt>こじん</rt></ruby>の <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>には <ruby>使<rt>つか</rt></ruby>えないよ。"},
+      {type:"ox", q:"<ruby>外国<rt>がいこく</rt></ruby>にも、それぞれの <ruby>税金<rt>ぜいきん</rt></ruby>の しくみが ある。", answer:0,
+       exp:"<ruby>国<rt>くに</rt></ruby>によって <ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>種類<rt>しゅるい</rt></ruby>や <ruby>決<rt>き</rt></ruby>まりは さまざまなんだ。"},
+      {type:"choice", q:"みんなから <ruby>少<rt>すこ</rt></ruby>しずつ <ruby>集<rt>あつ</rt></ruby>めて、<ruby>大<rt>おお</rt></ruby>きな <ruby>仕事<rt>しごと</rt></ruby>を する しくみは どれ?",
+       choices:["<ruby>税金<rt>ぜいきん</rt></ruby>","おこづかい","くじ","<ruby>利子<rt>りし</rt></ruby>"], answer:0,
+       exp:"<ruby>一人<rt>ひとり</rt></ruby>では できない <ruby>大<rt>おお</rt></ruby>きな <ruby>仕事<rt>しごと</rt></ruby>を、みんなの お<ruby>金<rt>かね</rt></ruby>で やるのが <ruby>税金<rt>ぜいきん</rt></ruby>の しくみ。"},
+      {type:"ox", q:"<ruby>日本<rt>にほん</rt></ruby>では、<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>を <ruby>呼<rt>よ</rt></ruby>ぶとき、<ruby>基本的<rt>きほんてき</rt></ruby>に お<ruby>金<rt>かね</rt></ruby>は かからない。", answer:0,
+       exp:"<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>や <ruby>警察<rt>けいさつ</rt></ruby>は、<ruby>税金<rt>ぜいきん</rt></ruby>の おかげで <ruby>無料<rt>むりょう</rt></ruby>で <ruby>呼<rt>よ</rt></ruby>べるんだ(<ruby>日本<rt>にほん</rt></ruby>の <ruby>場合<rt>ばあい</rt></ruby>)。"},
+      {type:"choice", q:"<ruby>消費税<rt>しょうひぜい</rt></ruby>が 10%の とき、550<ruby>円<rt>えん</rt></ruby>の しはらいのうち <ruby>税金<rt>ぜいきん</rt></ruby><ruby>分<rt>ぶん</rt></ruby>は いくら?",
+       choices:["10<ruby>円<rt>えん</rt></ruby>","50<ruby>円<rt>えん</rt></ruby>","55<ruby>円<rt>えん</rt></ruby>","100<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"500<ruby>円<rt>えん</rt></ruby>の <ruby>品物<rt>しなもの</rt></ruby> + <ruby>税金<rt>ぜいきん</rt></ruby>50<ruby>円<rt>えん</rt></ruby> = 550<ruby>円<rt>えん</rt></ruby>。<ruby>税金<rt>ぜいきん</rt></ruby><ruby>分<rt>ぶん</rt></ruby>は 50<ruby>円<rt>えん</rt></ruby>だね。"},
+      {type:"ox", q:"<ruby>税金<rt>ぜいきん</rt></ruby>は <ruby>大人<rt>おとな</rt></ruby>だけの <ruby>話<rt>はなし</rt></ruby>で、<ruby>子<rt>こ</rt></ruby>どもには <ruby>関係<rt>かんけい</rt></ruby>ない。", answer:1,
+       exp:"<ruby>子<rt>こ</rt></ruby>どもも <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>で <ruby>消費税<rt>しょうひぜい</rt></ruby>を はらっている。<ruby>税金<rt>ぜいきん</rt></ruby>は みんなに <ruby>関係<rt>かんけい</rt></ruby>が あるんだ。"},
+      {type:"choice", q:"「<ruby>公共<rt>こうきょう</rt></ruby>」の しせつは どれ?",
+       choices:["<ruby>市立<rt>しりつ</rt></ruby><ruby>図書館<rt>としょかん</rt></ruby>","<ruby>友達<rt>ともだち</rt></ruby>の <ruby>家<rt>いえ</rt></ruby>","ゲームセンター","コンビニ"], answer:0,
+       exp:"<ruby>市立<rt>しりつ</rt></ruby><ruby>図書館<rt>としょかん</rt></ruby>のように、みんなが <ruby>使<rt>つか</rt></ruby>える しせつを「<ruby>公共<rt>こうきょう</rt></ruby>しせつ」と いうよ。"},
+      {type:"ox", q:"<ruby>小学校<rt>しょうがっこう</rt></ruby>の <ruby>教科書<rt>きょうかしょ</rt></ruby>が <ruby>無料<rt>むりょう</rt></ruby>なのは、<ruby>税金<rt>ぜいきん</rt></ruby>の おかげだ。", answer:0,
+       exp:"<ruby>教科書<rt>きょうかしょ</rt></ruby>は <ruby>国<rt>くに</rt></ruby>の お<ruby>金<rt>かね</rt></ruby>(<ruby>税金<rt>ぜいきん</rt></ruby>)で くばられて いるんだ。"},
+      {type:"choice", q:"<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>種類<rt>しゅるい</rt></ruby>で ないものは どれ?",
+       choices:["<ruby>消費税<rt>しょうひぜい</rt></ruby>","<ruby>所得税<rt>しょとくぜい</rt></ruby>","<ruby>自動車<rt>じどうしゃ</rt></ruby>に かかる <ruby>税<rt>ぜい</rt></ruby>","おこづかい<ruby>税<rt>ぜい</rt></ruby>"], answer:3,
+       exp:"<ruby>給料<rt>きゅうりょう</rt></ruby>などに かかる <ruby>所得税<rt>しょとくぜい</rt></ruby>など、<ruby>税金<rt>ぜいきん</rt></ruby>には いろいろな <ruby>種類<rt>しゅるい</rt></ruby>が あるよ。"},
+      {type:"ox", q:"<ruby>公園<rt>こうえん</rt></ruby>の そうじや <ruby>花<rt>はな</rt></ruby>だんの <ruby>手<rt>て</rt></ruby><ruby>入<rt>い</rt></ruby>れにも、<ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>使<rt>つか</rt></ruby>われる ことが ある。", answer:0,
+       exp:"みんなが <ruby>気<rt>き</rt></ruby>もちよく <ruby>使<rt>つか</rt></ruby>えるように、<ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>守<rt>まも</rt></ruby>られて いるんだね。"},
+      {type:"choice", q:"ごみの <ruby>収集<rt>しゅうしゅう</rt></ruby>は、<ruby>何<rt>なに</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>えられて いる?",
+       choices:["<ruby>税金<rt>ぜいきん</rt></ruby>","おこづかい","くじの お<ruby>金<rt>かね</rt></ruby>","お<ruby>年玉<rt>としだま</rt></ruby>"], answer:0,
+       exp:"ごみの <ruby>収集<rt>しゅうしゅう</rt></ruby><ruby>車<rt>しゃ</rt></ruby>も、はたらく <ruby>人<rt>ひと</rt></ruby>の <ruby>給料<rt>きゅうりょう</rt></ruby>も、<ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>えられて いるよ。"},
+      {type:"ox", q:"<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>金額<rt>きんがく</rt></ruby>や <ruby>決<rt>き</rt></ruby>まりは、ずっと <ruby>変<rt>か</rt></ruby>わらない。", answer:1,
+       exp:"<ruby>時代<rt>じだい</rt></ruby>や くらしに <ruby>合<rt>あ</rt></ruby>わせて、<ruby>話<rt>はな</rt></ruby>し<ruby>合<rt>あ</rt></ruby>いで <ruby>変<rt>か</rt></ruby>わる ことが あるんだ。"},
+      {type:"choice", q:"100<ruby>円<rt>えん</rt></ruby>の おかし(<ruby>消費税<rt>しょうひぜい</rt></ruby>8%)を 2つ <ruby>買<rt>か</rt></ruby>うと、<ruby>税金<rt>ぜいきん</rt></ruby><ruby>分<rt>ぶん</rt></ruby>は <ruby>合計<rt>ごうけい</rt></ruby> いくら?",
+       choices:["8<ruby>円<rt>えん</rt></ruby>","16<ruby>円<rt>えん</rt></ruby>","24<ruby>円<rt>えん</rt></ruby>","32<ruby>円<rt>えん</rt></ruby>"], answer:1,
+       exp:"8<ruby>円<rt>えん</rt></ruby> × 2つ = 16<ruby>円<rt>えん</rt></ruby>。<ruby>買<rt>か</rt></ruby>う <ruby>数<rt>かず</rt></ruby>だけ <ruby>税金<rt>ぜいきん</rt></ruby>も <ruby>増<rt>ふ</rt></ruby>えるんだ。"},
+      {type:"ox", q:"<ruby>交番<rt>こうばん</rt></ruby>の おまわりさんの <ruby>仕事<rt>しごと</rt></ruby>も、<ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>えられて いる。", answer:0,
+       exp:"まちの <ruby>安全<rt>あんぜん</rt></ruby>を <ruby>守<rt>まも</rt></ruby>る <ruby>仕事<rt>しごと</rt></ruby>は、みんなの <ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>動<rt>うご</rt></ruby>いて いるんだ。"},
+      {type:"choice", q:"「<ruby>公共<rt>こうきょう</rt></ruby><ruby>料金<rt>りょうきん</rt></ruby>」に いちばん <ruby>近<rt>ちか</rt></ruby>いのは どれ?",
+       choices:["<ruby>水道<rt>すいどう</rt></ruby>や <ruby>電気<rt>でんき</rt></ruby>の <ruby>料金<rt>りょうきん</rt></ruby>","おかしの <ruby>値段<rt>ねだん</rt></ruby>","おもちゃの <ruby>値段<rt>ねだん</rt></ruby>","おこづかい"], answer:0,
+       exp:"くらしに かかせない <ruby>水道<rt>すいどう</rt></ruby>・<ruby>電気<rt>でんき</rt></ruby>・ガスなどの <ruby>料金<rt>りょうきん</rt></ruby>を、<ruby>公共<rt>こうきょう</rt></ruby><ruby>料金<rt>りょうきん</rt></ruby>と いうよ。"},
+      {type:"ox", q:"<ruby>税金<rt>ぜいきん</rt></ruby>は、<ruby>集<rt>あつ</rt></ruby>める ことだけでなく「<ruby>何<rt>なに</rt></ruby>に <ruby>使<rt>つか</rt></ruby>うか」も <ruby>大切<rt>たいせつ</rt></ruby>だ。", answer:0,
+       exp:"だから <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>は、みんなの <ruby>代表<rt>だいひょう</rt></ruby>が <ruby>議会<rt>ぎかい</rt></ruby>で <ruby>話<rt>はな</rt></ruby>し<ruby>合<rt>あ</rt></ruby>って <ruby>決<rt>き</rt></ruby>めるんだ。"},
+      {type:"choice", q:"<ruby>選挙<rt>せんきょ</rt></ruby>と <ruby>税金<rt>ぜいきん</rt></ruby>の かんけいで <ruby>正<rt>ただ</rt></ruby>しいのは?",
+       choices:["<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>を <ruby>決<rt>き</rt></ruby>める <ruby>人<rt>ひと</rt></ruby>を <ruby>選<rt>えら</rt></ruby>ぶ","<ruby>選挙<rt>せんきょ</rt></ruby>で おかしを <ruby>選<rt>えら</rt></ruby>ぶ","<ruby>選挙<rt>せんきょ</rt></ruby>で <ruby>天気<rt>てんき</rt></ruby>を <ruby>決<rt>き</rt></ruby>める","かんけいは ない"], answer:0,
+       exp:"<ruby>選挙<rt>せんきょ</rt></ruby>で <ruby>選<rt>えら</rt></ruby>ばれた <ruby>人<rt>ひと</rt></ruby>たちが、<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>を <ruby>話<rt>はな</rt></ruby>し<ruby>合<rt>あ</rt></ruby>うんだよ。"},
+      {type:"ox", q:"<ruby>図書館<rt>としょかん</rt></ruby>の <ruby>本<rt>ほん</rt></ruby>は、<ruby>税金<rt>ぜいきん</rt></ruby>で <ruby>買<rt>か</rt></ruby>われて、みんなで <ruby>使<rt>つか</rt></ruby>う ものだ。", answer:0,
+       exp:"だから ていねいに あつかって、きちんと <ruby>返<rt>かえ</rt></ruby>すんだね。"},
+      {type:"choice", q:"500<ruby>円<rt>えん</rt></ruby>(<ruby>税<rt>ぜい</rt></ruby>ぬき)の <ruby>品物<rt>しなもの</rt></ruby>。<ruby>消費税<rt>しょうひぜい</rt></ruby>10%だと しはらいは?",
+       choices:["500<ruby>円<rt>えん</rt></ruby>","505<ruby>円<rt>えん</rt></ruby>","550<ruby>円<rt>えん</rt></ruby>","600<ruby>円<rt>えん</rt></ruby>"], answer:2,
+       exp:"500<ruby>円<rt>えん</rt></ruby> + <ruby>税金<rt>ぜいきん</rt></ruby>50<ruby>円<rt>えん</rt></ruby> = 550<ruby>円<rt>えん</rt></ruby>。「<ruby>税<rt>ぜい</rt></ruby>ぬき」と「<ruby>税<rt>ぜい</rt></ruby>こみ」の ちがいに <ruby>気<rt>き</rt></ruby>をつけよう。"},
+      {type:"ox", q:"<ruby>大<rt>おお</rt></ruby>きな <ruby>災害<rt>さいがい</rt></ruby>の あとの <ruby>助<rt>たす</rt></ruby>け<ruby>合<rt>あ</rt></ruby>いにも、<ruby>税金<rt>ぜいきん</rt></ruby>が <ruby>使<rt>つか</rt></ruby>われる。", answer:0,
+       exp:"こまって いる <ruby>人<rt>ひと</rt></ruby>を <ruby>社会<rt>しゃかい</rt></ruby> <ruby>全体<rt>ぜんたい</rt></ruby>で <ruby>支<rt>ささ</rt></ruby>える。それも <ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>大切<rt>たいせつ</rt></ruby>な <ruby>役<rt>やく</rt></ruby>わりだよ。"},
+      {type:"choice", q:"<ruby>税金<rt>ぜいきん</rt></ruby>を きちんと <ruby>納<rt>おさ</rt></ruby>める ことは、だれの ために なる?",
+       choices:["みんなの くらしの ため","<ruby>一人<rt>ひとり</rt></ruby>だけの ため","<ruby>外国<rt>がいこく</rt></ruby>だけの ため","だれの ためにも ならない"], answer:0,
+       exp:"<ruby>自分<rt>じぶん</rt></ruby>も ふくめた みんなの くらしに もどって くるのが <ruby>税金<rt>ぜいきん</rt></ruby>なんだ。"},
+      {type:"ox", q:"<ruby>子<rt>こ</rt></ruby>ども<ruby>議会<rt>ぎかい</rt></ruby>など、<ruby>子<rt>こ</rt></ruby>どもが まちに <ruby>意見<rt>いけん</rt></ruby>を <ruby>伝<rt>つた</rt></ruby>える <ruby>取<rt>と</rt></ruby>り<ruby>組<rt>く</rt></ruby>みも ある。", answer:0,
+       exp:"<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>使<rt>つか</rt></ruby>い<ruby>道<rt>みち</rt></ruby>に、<ruby>子<rt>こ</rt></ruby>どもの <ruby>声<rt>こえ</rt></ruby>が <ruby>届<rt>とど</rt></ruby>く ことも あるんだよ。"},
+      {type:"choice", q:"<ruby>消費税<rt>しょうひぜい</rt></ruby>が 8%から 10%に <ruby>上<rt>あ</rt></ruby>がると、しはらいは どう なる?",
+       choices:["<ruby>増<rt>ふ</rt></ruby>える","<ruby>減<rt>へ</rt></ruby>る","<ruby>変<rt>か</rt></ruby>わらない","ただに なる"], answer:0,
+       exp:"<ruby>同<rt>おな</rt></ruby>じ <ruby>品物<rt>しなもの</rt></ruby>でも、<ruby>税金<rt>ぜいきん</rt></ruby>の <ruby>分<rt>ぶん</rt></ruby>だけ しはらいは <ruby>増<rt>ふ</rt></ruby>えるんだ。"},
+    ]
+  },
+];
+
+// ================= コース(がくねん別) =================
+const CARD_STYLES = [
+  {bg:"#FFF1D6", st:"#E09B10"},
+  {bg:"#E2F7EC", st:"#1B8A4E"},
+  {bg:"#E5EEFF", st:"#4D96FF"},
+];
+const ICONS = {
+  wallet:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v2"/><path d="M3 8v9a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2Z"/><circle cx="16" cy="13" r="1.3"/></svg>',
+  pig:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13a6 5 0 0 1 6-5h3a6 5 0 0 1 5.5 3.5L21 12v3l-2 .5-1 2h-3l-.5-1H10l-.5 1H6l-1-3a3 2 0 0 1-1-2Z"/><circle cx="16" cy="12" r="1"/><path d="M9 8V7"/></svg>',
+  cart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h2l1.5 9.5a1 1 0 0 0 1 .8h8a1 1 0 0 0 1-.8L20 8H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="17" cy="19" r="1.2"/></svg>',
+  dice:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="9" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="9" cy="15" r="1.1"/><circle cx="15" cy="15" r="1.1"/></svg>',
+  bank:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5"/><path d="M4 9h16"/><path d="M6 9v8M10 9v8M14 9v8M18 9v8"/><path d="M3 19h18"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6Z"/><path d="M15 3v4h4"/><path d="M9 13l2 2 4-4"/></svg>',
+  people:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M4 19a5 5 0 0 1 10 0"/><path d="M13.5 19a4 4 0 0 1 7 0"/></svg>',
+};
+const COURSES = [
+  { key:"low", label:"1〜3<ruby>年生<rt>ねんせい</rt></ruby>", themes:THEMES_LOW, icons:["wallet","pig","cart"],
+    descs:["お<ruby>金<rt>かね</rt></ruby>の じょうずな つかいかたを まなぼう","お<ruby>金<rt>かね</rt></ruby>を ためるコツを みつけよう","かいものめいじんに なろう"] },
+  { key:"high", label:"4〜6<ruby>年生<rt>ねんせい</rt></ruby>", themes:THEMES_HIGH, icons:["bank","doc","people"],
+    descs:["お<ruby>金<rt>かね</rt></ruby>を <ruby>預<rt>あず</rt></ruby>ける・<ruby>増<rt>ふ</rt></ruby>やす しくみを <ruby>知<rt>し</rt></ruby>ろう","かしこい <ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>が できるように なろう","みんなで <ruby>支<rt>ささ</rt></ruby>え<ruby>合<rt>あ</rt></ruby>う お<ruby>金<rt>かね</rt></ruby>の しくみを <ruby>知<rt>し</rt></ruby>ろう"] },
+];
+let courseIdx = 0;
+let THEMES = THEMES_LOW;   // いま えらばれている コースの テーマ
+
+const MIX_INDEX = 3;      // ミックスモードのばんごう
+const MIX_COUNT = 10;     // ミックスで出すもんだいのかず
+const THEME_COUNT = 8;    // 1つのテーマで出すもんだいのかず(ざいこからえらぶ)
+
+// ================= メダル(シールコレクション) =================
+// とくてんの くぎり: 5てんで どう・7てんで ぎん・8てん(まんてん)で きん
+const MEDALS = {
+  bronze: { label:"<ruby>銅<rt>どう</rt></ruby>", min:5, times:1, cond:"5<ruby>点<rt>てん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>", color:"#CD7F4A", light:"#F0C9A8", ring:"#A55E2E" },
+  silver: { label:"<ruby>銀<rt>ぎん</rt></ruby>", min:7, times:2, cond:"7<ruby>点<rt>てん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>", color:"#AEB6BF", light:"#E2E7EC", ring:"#8894A0" },
+  gold:   { label:"<ruby>金<rt>きん</rt></ruby>", min:8, times:3, cond:"<ruby>満点<rt>まんてん</rt></ruby>", color:"#F5C518", light:"#FFE99B", ring:"#D6A400" },
+};
+const MEDAL_KEYS = ["bronze","silver","gold"];
+// ミックスクイズ(10問)は ややきつめの じょうけん
+const MEDALS_MIX = {
+  bronze: { min:7,  times:2, cond:"7<ruby>点<rt>てん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>" },
+  silver: { min:9,  times:3, cond:"9<ruby>点<rt>てん</rt></ruby><ruby>以上<rt>いじょう</rt></ruby>" },
+  gold:   { min:10, times:4, cond:"<ruby>満点<rt>まんてん</rt></ruby>" },
+};
+// テーマばんごうに あった メダルじょうけんを かえす
+function medalRule(ti, key){
+  return (ti === MIX_INDEX ? MEDALS_MIX : MEDALS)[key];
+}
+// テーマごとの「たっせい回数」(5点以上・7点以上・満点を それぞれ何回 取ったか)
+function medalCounts(courseKey, ti){
+  const c = saveData.courses[courseKey];
+  if(!c.counts) c.counts = {};
+  if(!c.counts[ti]) c.counts[ti] = { bronze:0, silver:0, gold:0 };
+  return c.counts[ti];
+}
+// メダルを もっているか(きめられた 回数 たっせいすると かくとく)
+function hasMedal(counts, medalKey, ti){
+  if(!counts) return false;
+  return (counts[medalKey] || 0) >= medalRule(ti, medalKey).times;
+}
+
+// ================= ゲームのじょうたい =================
+let themeIdx = 0, qIdx = 0, score = 0;
+let sessionQuestions = [];   // こんかい出すもんだい(シャッフルずみ)
+let wrongList = [];          // まちがえたもんだい(おさらいよう)
+
+// ================= セーブデータ(ブラウザにほぞん) =================
+// bestScores: テーマごとの さいこうとくてん {0:8, 1:5, ...}
+// このデータは localStorage に ほぞんされ、ページを とじても のこる
+const SAVE_KEY = "okane-quiz-save-v1";
+let saveData = { lastCourse:0, courses:{ low:{bestScores:{}}, high:{bestScores:{}} } };
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === "object"){
+        if(parsed.courses){
+          saveData = parsed;               // あたらしい かたち
+        }else if(parsed.bestScores){
+          // むかしの かたちの データを ひきつぐ(低学年コースの きろくとして)
+          saveData = { lastCourse:0, courses:{ low:{bestScores:parsed.bestScores}, high:{bestScores:{}} } };
+        }
+      }
+    }
+  }catch(e){ /* よみこみ しっぱいでも あそべるように */ }
+  if(!saveData.courses) saveData = { lastCourse:0, courses:{} };
+  if(!saveData.courses.low)  saveData.courses.low  = {bestScores:{}};
+  if(!saveData.courses.high) saveData.courses.high = {bestScores:{}};
+}
+function writeSave(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(saveData)); }catch(e){}
+}
+// いまの コースの さいこうとくてん表を かえす
+function curScores(){ return saveData.courses[COURSES[courseIdx].key].bestScores; }
+
+const $ = id => document.getElementById(id);
+const screens = {title:$("screen-title"), quiz:$("screen-quiz"), result:$("screen-result"), mypage:$("screen-mypage")};
+
+loadSave();  // ページを ひらいたとき、ほぞんデータを よみこむ
+
+function show(name){
+  Object.values(screens).forEach(s=>s.classList.remove("active"));
+  screens[name].classList.add("active");
+  window.scrollTo({top:0});
+}
+
+// ================= シャッフル =================
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// もんだいをコピーして、4たくの えらびかたの じゅんばんも シャッフルする
+function prepareQuestion(q){
+  if(q.type !== "choice") return {...q};
+  const order = shuffle(q.choices.map((_,i)=>i));
+  return {
+    ...q,
+    choices: order.map(i=>q.choices[i]),
+    answer: order.indexOf(q.answer)
+  };
+}
+
+function buildSession(){
+  let pool;
+  if(themeIdx === MIX_INDEX){
+    pool = shuffle(THEMES.flatMap(t=>t.questions).slice()).slice(0, MIX_COUNT);
+  }else{
+    pool = shuffle(THEMES[themeIdx].questions.slice()).slice(0, THEME_COUNT);
+  }
+  return pool.map(prepareQuestion);
+}
+
+// ================= 効果音(Web Audio) =================
+let audioCtx = null;
+let muted = false;
+
+function ensureAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+  }
+  if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(freq, dur, delay=0, type="sine", vol=0.12){
+  if(muted || !audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t); osc.stop(t + dur + 0.05);
+}
+function playCorrect(){ beep(659,.13); beep(880,.22,.13); }
+function playWrong(){ beep(247,.2,0,"triangle",.1); beep(196,.28,.18,"triangle",.1); }
+function playTap(){ beep(523,.08,0,"sine",.06); }
+function playFanfare(){
+  [523,659,784,1047].forEach((f,i)=>beep(f,.18,i*0.14));
+  beep(1319,.4,.6);
+}
+
+$("mute-btn").addEventListener("click",()=>{
+  muted = !muted;
+  $("mute-btn").classList.toggle("muted", muted);
+  if(!muted){ ensureAudio(); playTap(); }
+});
+
+// ================= マスコットのひょうじょう =================
+const MOUTH = {
+  normal: "M46 74 Q60 80 74 74",
+  happy:  "M44 72 Q60 84 76 72",
+  sad:    "M46 78 Q60 70 74 78"
+};
+function coinFace(mood){
+  const coinEl = $("qz-coin");
+  $("qz-mouth").setAttribute("d", MOUTH[mood] || MOUTH.normal);
+  coinEl.classList.remove("coin-happy","coin-sad");
+  void coinEl.getBoundingClientRect(); // アニメをやりなおすためのおまじない
+  if(mood==="happy") coinEl.classList.add("coin-happy");
+  if(mood==="sad") coinEl.classList.add("coin-sad");
+}
+
+// ================= テーマえらび =================
+// ================= コースえらび・テーマカードの ひょうじ =================
+function renderThemeCards(){
+  const wrap = $("theme-cards");
+  wrap.innerHTML = "";
+  const course = COURSES[courseIdx];
+  course.themes.forEach((theme, i)=>{
+    const s = CARD_STYLES[i];
+    const btn = document.createElement("button");
+    btn.className = "theme-card";
+    btn.dataset.theme = i;
+    btn.innerHTML =
+      `<span class="theme-emoji" style="background:${s.bg}">` +
+      ICONS[course.icons[i]].replace("<svg", `<svg style="stroke:${s.st}"`) +
+      `</span><span><span class="theme-name">${theme.name}</span>` +
+      `<span class="theme-desc">${course.descs[i]}</span></span>` +
+      `<span class="theme-count"><ruby>毎回<rt>まいかい</rt></ruby>8<ruby>問<rt>もん</rt></ruby></span>`;
+    wrap.appendChild(btn);
+  });
+  const mix = document.createElement("button");
+  mix.className = "theme-card mix";
+  mix.dataset.theme = MIX_INDEX;
+  mix.innerHTML =
+    `<span class="theme-emoji" style="background:#F0E8FF">` +
+    ICONS.dice.replace("<svg", '<svg style="stroke:var(--purple)"') +
+    `</span><span><span class="theme-name">ミックスクイズ</span>` +
+    `<span class="theme-desc">このコースの <ruby>全<rt>ぜん</rt></ruby>テーマから ランダムで <ruby>出題<rt>しゅつだい</rt></ruby>!</span></span>` +
+    `<span class="theme-count"><ruby>毎回<rt>まいかい</rt></ruby>10<ruby>問<rt>もん</rt></ruby></span>`;
+  wrap.appendChild(mix);
+}
+
+function selectCourse(i){
+  courseIdx = i;
+  THEMES = COURSES[i].themes;
+  document.querySelectorAll(".course-tab").forEach((t, ti)=>t.classList.toggle("active", ti === i));
+  renderThemeCards();
+  saveData.lastCourse = i;
+  writeSave();
+}
+
+$("theme-cards").addEventListener("click",(e)=>{
+  const btn = e.target.closest(".theme-card");
+  if(!btn) return;
+  ensureAudio(); playTap();
+  themeIdx = Number(btn.dataset.theme);
+  startQuiz();
+});
+document.querySelectorAll(".course-tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    ensureAudio(); playTap();
+    selectCourse(Number(tab.dataset.course));
+  });
+});
+
+function themeName(){
+  return themeIdx === MIX_INDEX ? "ミックスクイズ" : THEMES[themeIdx].name;
+}
+
+function startQuiz(){
+  qIdx = 0; score = 0;
+  wrongList = [];
+  sessionQuestions = buildSession();
+  $("quiz-theme-name").innerHTML = themeName();
+  $("score").textContent = "0";
+  show("quiz");
+  renderQuestion();
+}
+
+// ================= もんだいひょうじ =================
+function renderQuestion(){
+  const q = sessionQuestions[qIdx];
+  const total = sessionQuestions.length;
+
+  coinFace("normal");
+  $("progress").style.width = (qIdx / total * 100) + "%";
+  $("q-num").innerHTML = `<ruby>第<rt>だい</rt></ruby>${qIdx+1}<ruby>問<rt>もん</rt></ruby> / ${total}<ruby>問<rt>もん</rt></ruby>`;
+  $("q-text").innerHTML = q.q;
+
+  const typeEl = $("q-type");
+  typeEl.innerHTML = q.type==="ox" ? "○×クイズ" : "4<ruby>択<rt>たく</rt></ruby>クイズ";
+  typeEl.className = "q-type " + (q.type==="ox" ? "ox" : "choice");
+
+  const ansWrap = $("answers");
+  ansWrap.innerHTML = "";
+  ansWrap.className = "answers" + (q.type==="ox" ? " ox-mode" : "");
+
+  if(q.type==="ox"){
+    const labels = [
+      {mark:"○", cls:"ox-maru", text:"<ruby>合<rt>あ</rt></ruby>ってる"},
+      {mark:"×", cls:"ox-batsu", text:"<ruby>間違<rt>まちが</rt></ruby>い"}
+    ];
+    labels.forEach((l,i)=>{
+      const b = document.createElement("button");
+      b.className = "ans-btn";
+      b.innerHTML = `<span class="${l.cls}">${l.mark}</span><span class="ox-label">${l.text}</span>`;
+      b.addEventListener("click",()=>answer(i));
+      ansWrap.appendChild(b);
+    });
+  }else{
+    q.choices.forEach((c,i)=>{
+      const b = document.createElement("button");
+      b.className = "ans-btn";
+      b.innerHTML = ["①","②","③","④"][i] + " " + c;
+      b.addEventListener("click",()=>answer(i));
+      ansWrap.appendChild(b);
+    });
+  }
+
+  $("feedback").classList.remove("show");
+}
+
+// ================= こたえあわせ =================
+function answer(selected){
+  ensureAudio();
+  const q = sessionQuestions[qIdx];
+  const buttons = document.querySelectorAll(".ans-btn");
+  buttons.forEach(b=>b.disabled = true);
+
+  const correct = selected === q.answer;
+  buttons.forEach((b,i)=>{
+    if(i === q.answer) b.classList.add("correct");
+    else if(i === selected) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+
+  const fbCard = $("fb-card"), fbHead = $("fb-head"), fbText = $("fb-text");
+  if(correct){
+    score++;
+    $("score").textContent = score;
+    fbCard.className = "fb-card good";
+    fbHead.innerHTML = "<ruby>正解<rt>せいかい</rt></ruby>!";
+    coinFace("happy");
+    playCorrect();
+    confetti();
+  }else{
+    fbCard.className = "fb-card bad";
+    fbHead.innerHTML = "<ruby>残念<rt>ざんねん</rt></ruby>! でも <ruby>大丈夫<rt>だいじょうぶ</rt></ruby>";
+    coinFace("sad");
+    playWrong();
+    wrongList.push(q);
+    setTimeout(()=>coinFace("normal"), 900); // すぐげんきになる
+  }
+  fbText.innerHTML = q.exp;
+  $("feedback").classList.add("show");
+  $("next-btn").innerHTML = (qIdx === sessionQuestions.length-1) ? "<ruby>結果<rt>けっか</rt></ruby>を <ruby>見<rt>み</rt></ruby>る ▶" : "<ruby>次<rt>つぎ</rt></ruby>の<ruby>問題<rt>もんだい</rt></ruby>へ ▶";
+  $("next-btn").focus();
+}
+
+$("next-btn").addEventListener("click",()=>{
+  playTap();
+  qIdx++;
+  if(qIdx >= sessionQuestions.length){
+    showResult();
+  }else{
+    renderQuestion();
+  }
+});
+
+// ================= けっか =================
+function correctAnswerText(q){
+  if(q.type === "ox") return q.answer === 0 ? "○(<ruby>合<rt>あ</rt></ruby>ってる)" : "×(<ruby>間違<rt>まちが</rt></ruby>い)";
+  return q.choices[q.answer];
+}
+
+function showResult(){
+  const total = sessionQuestions.length;
+  $("progress").style.width = "100%";
+  $("result-score").textContent = score;
+  $("result-total").innerHTML = ` / ${total}<ruby>点<rt>てん</rt></ruby>`;
+
+  // さいこうきろく と メダル(テーマモードのときだけ きろくする。ミックスはのぞく)
+  {
+    const scores = curScores();
+    if(scores[themeIdx] === undefined || score > scores[themeIdx]){
+      scores[themeIdx] = score;   // さいこうきろく(ひょうじ用)
+    }
+    // とどいた だんかいの 回数を ふやす(ミックスは ややきつめの じょうけん)
+    const counts = medalCounts(COURSES[courseIdx].key, themeIdx);
+    const before = MEDAL_KEYS.filter(k => hasMedal(counts, k, themeIdx));
+    MEDAL_KEYS.forEach(k => { if(score >= medalRule(themeIdx, k).min) counts[k]++; });
+    writeSave();
+    const newly = MEDAL_KEYS.filter(k => hasMedal(counts, k, themeIdx) && !before.includes(k));
+    if(newly.length){
+      const top = newly[newly.length - 1];
+      $("best-line").innerHTML = `${MEDALS[top].label}メダル ゲット!`;
+    }else{
+      const next = MEDAL_KEYS.find(k => !hasMedal(counts, k, themeIdx));
+      if(next){
+        const m = medalRule(themeIdx, next);
+        const rest = m.times - (counts[next] || 0);
+        $("best-line").innerHTML = `${MEDALS[next].label}メダルまで ${m.cond} あと${rest}<ruby>回<rt>かい</rt></ruby>!`;
+      }else{
+        $("best-line").innerHTML = `メダル コンプリート! <ruby>今<rt>いま</rt></ruby>までの <ruby>最高<rt>さいこう</rt></ruby>: ${scores[themeIdx]}<ruby>点<rt>てん</rt></ruby>`;
+      }
+    }
+  }
+
+  // レベルはんてい(せいかいりつで きめる)
+  const rate = score / total;
+  let lv;
+  if(rate === 1)        lv = {name:"お<ruby>金<rt>かね</rt></ruby><ruby>博士<rt>はかせ</rt></ruby>", msg:"パーフェクト! <ruby>君<rt>きみ</rt></ruby>は もう <ruby>立派<rt>りっぱ</rt></ruby>な お<ruby>金<rt>かね</rt></ruby><ruby>博士<rt>はかせ</rt></ruby>! おうちの<ruby>人<rt>ひと</rt></ruby>にも <ruby>自慢<rt>じまん</rt></ruby>しちゃおう!"};
+  else if(rate >= .75)  lv = {name:"お<ruby>金<rt>かね</rt></ruby>マスター", msg:"すごい! お<ruby>金<rt>かね</rt></ruby>のことが よくわかっているね。<ruby>博士<rt>はかせ</rt></ruby>まで あと<ruby>少<rt>すこ</rt></ruby>し!"};
+  else if(rate >= .5)   lv = {name:"お<ruby>金<rt>かね</rt></ruby><ruby>見習<rt>みなら</rt></ruby>い", msg:"いい<ruby>調子<rt>ちょうし</rt></ruby>! <ruby>下<rt>した</rt></ruby>の「おさらい」を <ruby>読<rt>よ</rt></ruby>んでから もう<ruby>一度<rt>いちど</rt></ruby> やってみよう!"};
+  else                  lv = {name:"チャレンジャー", msg:"クイズに <ruby>挑戦<rt>ちょうせん</rt></ruby>したことが <ruby>素晴<rt>すば</rt></ruby>らしい! おさらいを <ruby>読<rt>よ</rt></ruby>めば、<ruby>次<rt>つぎ</rt></ruby>は きっと <ruby>正解<rt>せいかい</rt></ruby>が <ruby>増<rt>ふ</rt></ruby>えるよ!"};
+  $("level-badge").innerHTML = lv.name;
+  $("level-msg").innerHTML = lv.msg;
+
+  // まちがえたもんだいの おさらい
+  const rv = $("review");
+  rv.innerHTML = "";
+  if(wrongList.length === 0){
+    rv.innerHTML = `<div class="review-perfect"><ruby>全問<rt>ぜんもん</rt></ruby> <ruby>正解<rt>せいかい</rt></ruby>! おさらいは なしだよ!</div>`;
+  }else{
+    const title = document.createElement("p");
+    title.className = "review-title";
+    title.innerHTML = `<ruby>間違<rt>まちが</rt></ruby>えた <ruby>問題<rt>もんだい</rt></ruby>の おさらい(${wrongList.length}<ruby>問<rt>もん</rt></ruby>)`;
+    rv.appendChild(title);
+    wrongList.forEach(q=>{
+      const item = document.createElement("div");
+      item.className = "rv-item";
+      const qEl = document.createElement("p"); qEl.className="rv-q"; qEl.innerHTML = "Q. " + q.q;
+      const aEl = document.createElement("p"); aEl.className="rv-a"; aEl.innerHTML = "<ruby>答<rt>こた</rt></ruby>え: " + correctAnswerText(q);
+      const eEl = document.createElement("p"); eEl.className="rv-exp"; eEl.innerHTML = q.exp;
+      item.append(qEl,aEl,eEl);
+      rv.appendChild(item);
+    });
+  }
+
+  show("result");
+  if(rate >= .75){ confetti(60); playFanfare(); }
+}
+
+// ================= マイページ(コレクションちょう) =================
+// メダルのSVGを つくる。got=もっているか, key=bronze/silver/gold
+function medalSVG(key, got){
+  const m = MEDALS[key];
+  const c   = got ? m.color : "#D8D0BE";
+  const lt  = got ? m.light : "#EDE7D6";
+  const ring= got ? m.ring  : "#C3B9A2";
+  // まるいメダル + リボン
+  return `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <path d="M22 6 L28 30 L20 30 Z" fill="${got?'#6FA8DC':'#CBC3B0'}"/>
+    <path d="M42 6 L36 30 L44 30 Z" fill="${got?'#E06666':'#CBC3B0'}"/>
+    <circle cx="32" cy="40" r="20" fill="${lt}" stroke="${ring}" stroke-width="3"/>
+    <circle cx="32" cy="40" r="13" fill="${c}" stroke="${ring}" stroke-width="2"/>
+    <path d="M32 33 l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6Z"
+      fill="${got?'#FFFFFF':'#E5DFCE'}" opacity="${got?0.95:0.7}"/>
+  </svg>`;
+}
+
+// コレクションちょうを かきかえる(コースごとに ひょうじ)
+function renderCollection(){
+  const wrap = $("collection");
+  wrap.innerHTML = "";
+  const medalKeys = MEDAL_KEYS;
+  let totalGot = 0;
+  const slots = [0, 1, 2, MIX_INDEX];   // 3テーマ + ミックスクイズ
+  const totalAll = COURSES.length * slots.length * medalKeys.length;  // 2×4×3 = 24
+
+  COURSES.forEach(course=>{
+    const scores = saveData.courses[course.key].bestScores;
+    let courseGot = 0;
+    const head = document.createElement("p");
+    head.className = "course-head";
+    wrap.appendChild(head);
+
+    slots.forEach(ti=>{
+      const isMix = (ti === MIX_INDEX);
+      const best = scores[ti];
+      const block = document.createElement("div");
+      block.className = "theme-block" + (isMix ? " mix-block" : "");
+
+      const top = document.createElement("div");
+      top.className = "theme-block-top";
+      const nameEl = document.createElement("span");
+      nameEl.className = "theme-block-name";
+      nameEl.innerHTML = isMix ? "ミックスクイズ" : course.themes[ti].name;
+      const bestEl = document.createElement("span");
+      bestEl.className = "theme-block-best";
+      bestEl.innerHTML = (best !== undefined) ? `<ruby>最高<rt>さいこう</rt></ruby> ${best}<ruby>点<rt>てん</rt></ruby>` : "<ruby>未<rt>み</rt></ruby>プレイ";
+      top.append(nameEl, bestEl);
+      block.appendChild(top);
+
+      const row = document.createElement("div");
+      row.className = "medal-row";
+      const counts = medalCounts(course.key, ti);
+      medalKeys.forEach(key=>{
+        const rule = medalRule(ti, key);
+        const got = hasMedal(counts, key, ti);
+        if(got) courseGot++;
+        const cell = document.createElement("div");
+        cell.className = "medal " + (got ? "got" : "locked");
+        cell.innerHTML = medalSVG(key, got) +
+          `<span class="medal-name">${MEDALS[key].label}</span>` +
+          (got ? "" : `<span class="medal-need">${rule.cond} ${counts[key] || 0}/${rule.times}</span>`);
+        row.appendChild(cell);
+      });
+      block.appendChild(row);
+      wrap.appendChild(block);
+    });
+
+    head.innerHTML = `${course.label}コース  メダル ${courseGot} / ${slots.length * medalKeys.length}<ruby>個<rt>こ</rt></ruby>`;
+    totalGot += courseGot;
+  });
+
+  $("mypage-progress").innerHTML = `<ruby>全部<rt>ぜんぶ</rt></ruby>で メダル ${totalGot} / ${totalAll}<ruby>個<rt>こ</rt></ruby> <ruby>集<rt>あつ</rt></ruby>めたよ!`;
+}
+
+function openMypage(){
+  playTap();
+  renderCollection();
+  show("mypage");
+}
+
+$("retry-btn").addEventListener("click", ()=>{ playTap(); startQuiz(); });
+$("home-btn").addEventListener("click", ()=>{ playTap(); show("title"); });
+$("open-mypage").addEventListener("click", openMypage);
+$("result-mypage").addEventListener("click", openMypage);
+$("mypage-back").addEventListener("click", ()=>{ playTap(); show("title"); });
+
+// ================= とちゅうでTOPにもどる =================
+function openQuitModal(){ playTap(); $("quit-modal").classList.add("show"); }
+function closeQuitModal(){ $("quit-modal").classList.remove("show"); }
+
+$("back-btn").addEventListener("click", openQuitModal);
+$("modal-stay").addEventListener("click", ()=>{ playTap(); closeQuitModal(); });
+$("modal-quit").addEventListener("click", ()=>{
+  playTap();
+  closeQuitModal();
+  show("title");
+});
+// はいけい(くらいところ)を タップしても とじる
+$("quit-modal").addEventListener("click", (e)=>{
+  if(e.target === $("quit-modal")) closeQuitModal();
+});
+
+// ================= かみふぶき =================
+function confetti(count = 28){
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const colors = ["#F7B32B","#2FBF71","#FF6B6B","#4D96FF","#FFD97A","#FF9D7A"];
+  for(let i=0;i<count;i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    const size = 6 + Math.random()*8;
+    c.style.left = Math.random()*100 + "vw";
+    c.style.width = size + "px";
+    c.style.height = size*0.6 + "px";
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (1.4 + Math.random()*1.4) + "s";
+    c.style.animationDelay = (Math.random()*0.3) + "s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3200);
+  }
+}
+
+selectCourse(saveData.lastCourse || 0);
+</script>
+</body>
+</html>
